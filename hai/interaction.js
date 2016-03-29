@@ -9,17 +9,24 @@
 // 2016-03-29
 // some are called training, some are called train
 
+
 // Differences between us and Markant & Gureckis:
+//
 // Their non-active training is just watching the stimuli with the label.
 // We cannot do this because we have to measure the participants'
 // performance in the training phase.
+//
+// They use 600 discrete steps for training, we use continuous values
+//
 // I think all their random samples used the true generatative label,
 // while their non-random samples used the optimal-decision-rule label.
 // So, I am using the true label.
+//
 // In their table 1, the smaller variance is 2000, which means achieving
 // score_thresh = 0.95 is impossible.
 // For this reason, we use 75 following Ashby 2002.
 // In their setup, stimuli are shown for only 250ms.
+
 
 //####################
 //    configuration var
@@ -31,7 +38,6 @@ var STI_RADIUS_MIN = STI_MARGIN + Math.random()*50; //px
 var STI_RADIUS_MAX = STI_AREA_W/2 - STI_MARGIN; //px
 var STI_ANGLE_MIN = Math.random()*30; //deg
 var STI_ANGLE_MAX = STI_ANGLE_MIN + 150; //deg
-// Markant & Gureckis use 600 discrete steps, I use continuous values
 
 var SCORE_BAR_W = 100; //px
 var SCORE_BAR_H = 20; //px
@@ -41,7 +47,7 @@ var SCORE_MEMORY_MAX = 20;
 
 var MAX_TRAIN_TRIALS = 500;
 var MAX_INTER_TRIALS = 30; //30;
-var MAX_CHECK_TRIALS = 20; //20;
+var MAX_CHECK_TRIALS = 5*4; //should be multiples of 4;
 
 var INSTRUCTION_WAIT_TIME = 3000; //ms
 var FEEDBACK_WAIT_TIME = 1000; //ms
@@ -54,10 +60,8 @@ var PREFERENCE = randClass();
 
 function randCond() {
 // 2 sampling cond x 2 category cond = 4 conditions:
-// SAC1 = small std_a; small mu_a on category 1
-// SAC2 = small std_a; small mu_a on category 2
-// SRC1 = samll std_r; small mu_r on category 1
-// SRC2 = samll std_r; small mu_r on category 2
+// SA means small std on angle, large std on radius
+// SR means small std on radius, large std on angle
   var s_cond, c_cond;
   if (Math.random()>0.5) {
       s_cond = "SA";
@@ -158,36 +162,33 @@ function randClass() {
 //    discrete random inputs
 //####################
 input_check = {radius: [], angle: [], truth: []};
-add_input_contents(input_check, MAX_CHECK_TRIALS);
+add_check_contents(input_check, MAX_CHECK_TRIALS);
 
-
-function discretize(min, max, n) {
-  var arr, dx;
-  arr = [];
-  dx = (max-min)/(n-1);
-  for (i=0; i<n; i++) {
-    arr.push(min + i*dx);
-  }
-  return arr;
-}
-
-function broadcast(arr1, arr2) {
-  var arr = [];
-  for (i=0; i<arr1.length; i++) {
-    for (j=0; j<arr2.length; j++) {
-      arr.push([arr1[i], arr2[j]]);
+function add_check_contents(in_array, max_trials) {
+  var n, n_sub, n_in_block;
+  var r_arr, a_arr, sub_r_arr, sub_a_arr;
+  var mix_arr;
+  n = 16;
+  r_arr = discretize(STI_RADIUS_MIN, STI_RADIUS_MAX, n);
+  a_arr = discretize(STI_ANGLE_MIN, STI_ANGLE_MAX, n);
+  n_in_block = max_trials/4;
+  n_sub = n/4;
+  for (r_block=0; r_block<4; r_block++) {
+    for (a_block=0; a_block<4; a_block++) {
+      sub_r_arr = subarray(r_arr, r_block*n_sub, (r_block+1)*n_sub-1);
+      sub_a_arr = subarray(a_arr, a_block*n_sub, (a_block+1)*n_sub-1);
+      mix_arr = broadcast(sub_r_arr, sub_a_arr);
+      mix_arr = _.shuffle(mix_arr);
+      for (i=0; i<n_in_block; i++) {
+        in_array.truth.push("N/a");
+        in_array.radius.push(mix_arr[i][0]);
+        in_array.angle.push(mix_arr[i][1]);
+      }
     }
   }
-  return arr;
 }
 
-function subarray(arr, indi, indf) {
-  var subarr = [];
-  for (i=indi; i<=indf; i++) {
-    subarr.push(arr[i]);
-  }
-  return subarr;
-}
+console.log(input_check)
 
 //####################
 //    buttons & slider
@@ -919,6 +920,34 @@ function std(in_array) {
     s += (in_array[i]-m)*(in_array[i]-m);
   }
   return Math.sqrt(s/(n-1));
+}
+
+function discretize(min, max, n) {
+  var arr, dx;
+  arr = [];
+  dx = (max-min)/(n-1);
+  for (i=0; i<n; i++) {
+    arr.push(min + i*dx);
+  }
+  return arr;
+}
+
+function broadcast(arr1, arr2) {
+  var arr = [];
+  for (i=0; i<arr1.length; i++) {
+    for (j=0; j<arr2.length; j++) {
+      arr.push([arr1[i], arr2[j]]);
+    }
+  }
+  return arr;
+}
+
+function subarray(arr, indi, indf) {
+  var subarr = [];
+  for (i=indi; i<=indf; i++) {
+    subarr.push(arr[i]);
+  }
+  return subarr;
 }
 
 //####################
