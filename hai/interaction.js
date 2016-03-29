@@ -857,7 +857,7 @@ function end_exp() {
 //    math utils
 //####################
 
-function sampleSamllVar(min, max) {
+function sampleSmallVar(min, max) {
   var mid, std;
   mid = (min + max)/2;
   std = Math.sqrt(75);
