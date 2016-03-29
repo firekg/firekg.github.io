@@ -165,18 +165,18 @@ input_check = {radius: [], angle: [], truth: []};
 add_check_contents(input_check, MAX_CHECK_TRIALS);
 
 function add_check_contents(in_array, max_trials) {
-  var n, n_sub, n_in_block;
+  var n, n_split, n_sub, n_in_block;
   var r_arr, a_arr, sub_r_arr, sub_a_arr;
   var mix_arr;
   n = 16;
+  n_sub = n/n_split;
+  n_in_block = max_trials/n_split/n_split;
   r_arr = discretize(STI_RADIUS_MIN, STI_RADIUS_MAX, n);
   a_arr = discretize(STI_ANGLE_MIN, STI_ANGLE_MAX, n);
-  n_in_block = max_trials/4;
-  n_sub = n/4;
-  for (r_block=0; r_block<4; r_block++) {
-    for (a_block=0; a_block<4; a_block++) {
+  for (r_split=0; r_split<n_split; r_split++) {
+    for (a_split=0; a_split<n_split; a_split++) {
       sub_r_arr = subarray(r_arr, r_block*n_sub, (r_block+1)*n_sub-1);
-      sub_a_arr = subarray(a_arr, a_block*n_sub, (a_block+1)*n_sub-1);
+      sub_a_arr = subarray(a_arr, a_split*n_sub, (a_split+1)*n_sub-1);
       mix_arr = broadcast(sub_r_arr, sub_a_arr);
       mix_arr = _.shuffle(mix_arr);
       for (i=0; i<n_in_block; i++) {
