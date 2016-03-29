@@ -169,6 +169,7 @@ function add_check_contents(in_array, max_trials) {
   var r_arr, a_arr, sub_r_arr, sub_a_arr;
   var mix_arr;
   n = 16;
+  n_split = 2;
   n_sub = n/n_split;
   n_in_block = max_trials/n_split/n_split;
   r_arr = discretize(STI_RADIUS_MIN, STI_RADIUS_MAX, n);
