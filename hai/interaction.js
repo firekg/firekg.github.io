@@ -21,6 +21,9 @@
 // For this reason, we use 75 following Ashby 2002.
 // In their setup, stimuli are shown for only 250ms.
 
+$.getScript("math_util.js", function(){
+   alert("Script loaded but not necessarily executed.");
+});
 
 //####################
 //    configuration var
