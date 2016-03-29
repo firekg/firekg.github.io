@@ -6,6 +6,20 @@
 // 2016-03-21
 // check browser support for all html elements: canvas is fine;
 //  console is commented out, only for debugging.
+// 2016-03-29
+// some are called training, some are called train
+
+// Differences between us and Markant & Gureckis:
+// Their non-active training is just watching the stimuli with the label.
+// We cannot do this because we have to measure the participants'
+// performance in the training phase.
+// I think all their random samples used the true generatative label,
+// while their non-random samples used the optimal-decision-rule label.
+// So, I am using the true label.
+// In their table 1, the smaller variance is 2000, which means achieving
+// score_thresh = 0.95 is impossible.
+// For this reason, we use 75 following Ashby 2002.
+// In their setup, stimuli are shown for only 250ms.
 
 
 //####################
@@ -13,29 +27,57 @@
 //####################
 var STI_AREA_W = 300; //PX
 var STI_AREA_H = 300; //px
-var STI_RADIUS_MIN = STI_AREA_W/20; //px
-var STI_RADIUS_MAX = STI_AREA_W/2 - STI_RADIUS_MIN; //px
-var STI_ANGLE_MIN = 0; //deg
-var STI_ANGLE_MAX = 150; //deg
+var STI_MARGIN = 15; //px
+var STI_RADIUS_MIN = STI_MARGIN + Math.random()*50; //px
+var STI_RADIUS_MAX = STI_AREA_W/2 - STI_MARGIN; //px
+var STI_ANGLE_MIN = Math.random()*30; //deg
+var STI_ANGLE_MAX = STI_ANGLE_MIN + 150; //deg
+// Markant & Gureckis use 600 discrete steps, I use continuous values
 
 var SCORE_BAR_W = 100; //px
 var SCORE_BAR_H = 20; //px
-var SCORE_THRESH = 0.10;//0.95;
-var SCORE_MEMORY_MAX = 20
 
-var MAX_TRAIN_TRIALS = 500; //ms
-var MAX_TEST_TRIALS = 3;//30;
-var MAX_CHECK_TRIALS = 2;//20;
+var SCORE_THRESH = 0.95; //0.95;
+var SCORE_MEMORY_MAX = 20;
+
+var MAX_TRAIN_TRIALS = 500;
+var MAX_INTER_TRIALS = 30; //30;
+var MAX_CHECK_TRIALS = 20; //20;
 
 var INSTRUCTION_WAIT_TIME = 3000; //ms
 var FEEDBACK_WAIT_TIME = 1000; //ms
 
+//####################
+//    condition var
+//####################
+var SAMP_CAT_COND = randCond();
+var PREFERENCE = randClass();
+
+function randCond() {
+// 2 sampling cond x 2 category cond = 4 conditions:
+// SAC1 = small std_a; small mu_a on category 1
+// SAC2 = small std_a; small mu_a on category 2
+// SRC1 = samll std_r; small mu_r on category 1
+// SRC2 = samll std_r; small mu_r on category 2
+  var s_cond, c_cond;
+  if (Math.random()>0.5) {
+      s_cond = "SA";
+  } else {
+      s_cond = "SR";
+  }
+  if (Math.random()>0.5) {
+      c_cond = "Beat";
+  } else {
+      c_cond = "Sonic";
+  }
+  return [s_cond, c_cond]
+}
 
 //####################
 //    global var initialization
 //####################
 var training_trial = 1;
-var test_trial = 1;
+var inter_trial = 1;
 var check_trial = 1;
 
 var spareRandom = null;
@@ -48,23 +90,57 @@ for (i=0; i<SCORE_MEMORY_MAX; i++) {
   score_memory.push(0)
 }
 
-
 //####################
-//    inputs
+//    continuous random inputs
 //####################
 input_train = {radius: [], angle: [], truth: []};
-input_test =  {radius: [], angle: [], truth: []};
-input_check = {radius: [], angle: [], truth: []};
+input_inter =  {radius: [], angle: [], truth: []};
 add_input_contents(input_train, MAX_TRAIN_TRIALS);
-add_input_contents(input_test, MAX_TEST_TRIALS);
-add_input_contents(input_check, MAX_CHECK_TRIALS);
+add_input_contents(input_inter, MAX_INTER_TRIALS);
 
 function add_input_contents(in_array, max_trials) {
-  var c, r, a;
+  var c, r, a, s;
+  var cond = SAMP_CAT_COND;
+  var min_r, max_r, min_a, max_a;
+  min_r = STI_RADIUS_MIN;
+  max_r = STI_RADIUS_MAX;
+  min_a = STI_ANGLE_MIN;
+  max_a = STI_ANGLE_MAX;
   for (i=0; i<max_trials; i++) {
     c = randClass();
-    r = randRadius(c);
-    a = randAngle(c);
+    if (cond[0] == "SR" && cond[1] == "Beat") {
+      s = sampleSmallVar(min_r, max_r);
+      a = sampleBigVar(min_a, max_a);
+      if ( c == "Beat" ) {
+        r = s - 40;
+      } else if ( c == "Sonic") {
+        r = s + 40;
+      }
+    } else if (cond[0] == "SR" && cond[1] == "Sonic") {
+      s = sampleSmallVar(min_r, max_r);
+      a = sampleBigVar(min_a, max_a);
+      if ( c == "Beat" ) {
+        r = s + 40;
+      } else if ( c == "Sonic") {
+        r = s - 40;
+      }
+    } else if (cond[0] == "SA" && cond[1] == "Beat") {
+      s = sampleSmallVar(min_a, max_a);
+      r = sampleBigVar(min_r, max_r);
+      if ( c == "Beat" ) {
+        a = s - 40;
+      } else if ( c == "Sonic") {
+        a = s + 40;
+      }
+    } else if (cond[0] == "SA" && cond[1] == "Sonic") {
+      s = sampleSmallVar(min_a, max_a);
+      r = sampleBigVar(min_r, max_r);
+      if ( c == "Beat" ) {
+        a = s + 40;
+      } else if ( c == "Sonic") {
+        a = s - 40;
+      }
+    }
     in_array.truth.push(c);
     in_array.radius.push(r);
     in_array.angle.push(a);
@@ -74,137 +150,45 @@ function add_input_contents(in_array, max_trials) {
 function randClass() {
   if (Math.random()>0.5){
     return "Beat"
-  }
-  else {
+  } else {
     return "Sonic"
   }
 }
 
-function randRadius(c) {
-  var min, max, mid, mu, std;
-  min = STI_RADIUS_MIN;
-  max = STI_RADIUS_MAX;
-  mid = (STI_RADIUS_MIN + STI_RADIUS_MAX)/2;
-  if (c=="Beat") {
-    mu =  mid + STI_RADIUS_MAX/4;
-    std =  STI_RADIUS_MAX/12;
-  } else if (c=="Sonic") {
-    mu =  mid - STI_RADIUS_MAX/4;
-    std =  STI_RADIUS_MAX/12;
-  }
-  return normalRandomInRange(mu, std, min, max);
-  // return normalRandom(mu, std);
-}
+//####################
+//    discrete random inputs
+//####################
+input_check = {radius: [], angle: [], truth: []};
+add_input_contents(input_check, MAX_CHECK_TRIALS);
 
-function randAngle(c) {
-  var min, max, mid, mu, std;
-  min = STI_ANGLE_MIN;
-  max = STI_ANGLE_MAX;
-  mid = (STI_ANGLE_MIN + STI_ANGLE_MAX)/2;
-  if (c=="Beat") {
-    mu =  mid;
-    std =  STI_ANGLE_MAX/12;
-  } else if (c=="Sonic") {
-    mu =  mid;
-    std =  STI_ANGLE_MAX/12;
-  }
-  return normalRandomInRange(mu, std, min, max);
-  // return normalRandom(mu, std);
-}
 
-function normalRandomInRange(mean, std, min, max) {
-  var s;
-  do {
-    s = normalRandom(mean, std)
-  } while (s<min || s>max);
-  return s
-}
-
-function normalRandom(mean, std) {
-//Marsaglia polar method
-	var val, u, v, s, mul;
-	if(spareRandom !== null) {
-		val = spareRandom;
-		spareRandom = null;
-	}
-	else {
-		do {
-			u = Math.random()*2-1;
-			v = Math.random()*2-1;
-			s = u*u+v*v;
-		} while(s == 0 || s >= 1);
-
-		mul = Math.sqrt(-2 * Math.log(s) / s);
-		val = u * mul;
-		spareRandom = v * mul;
-	}
-	return mean + std*val
-}
-
-function test_input_stat() {
-  var n = 10000;
-  beat_radius_array = [];
-  beat_angle_array = [];
+function discretize(min, max, n) {
+  var arr, dx;
+  arr = [];
+  dx = (max-min)/(n-1);
   for (i=0; i<n; i++) {
-    beat_radius_array.push(randRadius("Beat"));
-    beat_angle_array.push(randAngle("Beat"));
+    arr.push(min + i*dx);
   }
-  sonic_radius_array = [];
-  sonic_angle_array = [];
-  for (i=0; i<n; i++) {
-    sonic_radius_array.push(randRadius("Sonic"));
-    sonic_angle_array.push(randAngle("Sonic"));
-  }
-  console.log("Length Beat radius array = %s", beat_radius_array.length)
-  console.log("Mean Radius Beat = %s|%s",
-    mean(beat_radius_array),
-    (STI_RADIUS_MIN + STI_RADIUS_MAX)/2 + STI_RADIUS_MAX/4);
-  console.log("Mean Radius Sonic = %s|%s",
-    mean(sonic_radius_array),
-    (STI_RADIUS_MIN + STI_RADIUS_MAX)/2 - STI_RADIUS_MAX/4);
-  console.log("Mean Angle Beat = %s|%s",
-    mean(beat_angle_array),
-    (STI_ANGLE_MIN + STI_ANGLE_MAX)/2);
-  console.log("Mean Angle Sonic = %s|%s",
-    mean(sonic_angle_array),
-    (STI_ANGLE_MIN + STI_ANGLE_MAX)/2);
-  console.log("Std Radius Beat = %s|%s",
-    std(beat_radius_array),
-    STI_RADIUS_MAX/12);
-  console.log("Std Radius Sonic = %s|%s",
-    std(sonic_radius_array),
-    STI_RADIUS_MAX/12);
-  console.log("Std Angle Beat = %s|%s",
-    std(beat_angle_array),
-    STI_ANGLE_MAX/12);
-  console.log("Std Angle Sonic = %s|%s",
-    std(sonic_angle_array),
-    STI_ANGLE_MAX/12);
+  return arr;
 }
 
-function mean(in_array) {
-  var n, s;
-  n = in_array.length;
-  s = 0;
-  for (i=0; i<n; i++) {
-    s += in_array[i];
+function broadcast(arr1, arr2) {
+  var arr = [];
+  for (i=0; i<arr1.length; i++) {
+    for (j=0; j<arr2.length; j++) {
+      arr.push([arr1[i], arr2[j]]);
+    }
   }
-  return s/n;
+  return arr;
 }
 
-function std(in_array) {
-  var n, s, m;
-  n = in_array.length;
-  s = 0;
-  m = mean(in_array);
-  for (i=0; i<n; i++) {
-    s += (in_array[i]-m)*(in_array[i]-m);
+function subarray(arr, indi, indf) {
+  var subarr = [];
+  for (i=indi; i<=indf; i++) {
+    subarr.push(arr[i]);
   }
-  return Math.sqrt(s/(n-1));
+  return subarr;
 }
-
-//test_input_stat()
-
 
 //####################
 //    buttons & slider
@@ -249,10 +233,10 @@ slides.unshift({ name: "training", constructor: training_constructor});
 //slides are added in training_trials_end until condition satisfied
 slides.unshift({name: "training_trial",
   constructor: training_trials_constructor});
-slides.unshift({ name: "test", constructor: test_constructor});
-for (i=0; i<MAX_TEST_TRIALS; i++){
+slides.unshift({ name: "inter", constructor: inter_constructor});
+for (i=0; i<MAX_INTER_TRIALS; i++){
   slides.unshift(
-    {name: "test_trial", constructor: test_trials_constructor}
+    {name: "inter_trial", constructor: inter_trials_constructor}
   )
 }
 slides.unshift({ name: "check", constructor: check_constructor});
@@ -269,7 +253,7 @@ slides.unshift({ name: "survey", constructor: survey_constructor});
 //####################
 // console.log("Hello, World!") //debug tool!!
 exp = {data: []}
-show_next_slide(slides)
+// show_next_slide(slides)
 
 function show_next_slide(slides) {
   $( ".slide" ).remove()
@@ -338,9 +322,10 @@ function training_constructor() {
   text = $("<div class='block-text'>")
   text.append($("<p>").html('In this first part, \
     you will see "loop antennas" that received signals from one of two \
-    music stations (Beat or Sonic). The station received depended on the \
-    antenna&#39s overall radius and the orientation of an inner line. \
-    Note that these antennas are sometimes noisy and can occastionally \
+    music stations (Beat or Sonic). The station received depended \
+    in some way on the antenna&#39s overall radius \
+    and the orientation of the inner diameter. \
+    Note that these antennas are noisy and can occastionally \
     receive from the wrong station.'))
   text.append($("<p>").html('The goal here is to learn what kind of \
     antennas most often receive from which station. After an antenna is\
@@ -551,13 +536,13 @@ function warning_constructor() {
   slide.show()
 }
 
-function test_constructor() {
-// next button triggers test_trials_constructor
-  test_start_time = new Date().getTime();
+function inter_constructor() {
+// next button triggers inter_trials_constructor
+  inter_start_time = new Date().getTime();
   slide = $("<div class='slide'>")
   text = $("<div class='block-text'>")
   text.append($("<p>").html('In this part of the experiment, \
-    pretend that you like the <b>Beat</b> better. \
+    pretend that you like the <b>'+PREFERENCE+'</b> better. \
     You are going to train the recommender system by telling it if the \
     antenna it chose will receive from the station that you like \
     (that&#39s the Beat). \
@@ -581,11 +566,11 @@ function test_constructor() {
   }
 }
 
-function test_trials_constructor() {
-// buttons/key press trigger test_feedback
+function inter_trials_constructor() {
+// buttons/key press trigger inter_feedback
   log_start_time = new Date().getTime() //bad form: storred in global var
-  slide = $("<div class='slide' id='test_slide' >")
-  text = $("<div class='block-text' id='test_text'>")
+  slide = $("<div class='slide' id='inter_slide' >")
+  text = $("<div class='block-text' id='inter_text'>")
   table = $("<table align='center'>")
   row_stimulus_area = $("<tr align='center'>")
   row_buttons = $("<tr align='center'>")
@@ -595,10 +580,10 @@ function test_trials_constructor() {
   row_buttons.append(
       $("<button class='btn btn-default like' value='Like'>")
         .text('Like (z)')
-        .one("click", function() {test_feedback($(this))}),
+        .one("click", function() {inter_feedback($(this))}),
       $("<button class='btn btn-default dislike' value='Dislike'>")
         .text('Dislike (m)')
-        .one("click", function() {test_feedback($(this))})
+        .one("click", function() {inter_feedback($(this))})
   )
   table.append(
       row_stimulus_area,
@@ -606,9 +591,9 @@ function test_trials_constructor() {
   )
   text.append(
     $("<p>").html("Please remember to pretend that you like the \
-      <b>Beat</b>. The Next button will \
-      appear once you finish all the trials. (Trials " + test_trial
-       + "/" + MAX_TEST_TRIALS + ")"),
+      <b>"+PREFERENCE+"</b>. The Next button will \
+      appear once you finish all the trials. (Trials " + inter_trial
+       + "/" + MAX_INTER_TRIALS + ")"),
     table
   )
   slide.append(text)
@@ -616,45 +601,45 @@ function test_trials_constructor() {
   // response by key press
   $(window).on("keypress", function (event) {
     if (exp.training_complete) { return }
-    if (event.which == 122) {test_feedback($("button.like"))}
-    if (event.which == 109) {test_feedback($("button.dislike"))}
+    if (event.which == 122) {inter_feedback($("button.like"))}
+    if (event.which == 109) {inter_feedback($("button.dislike"))}
   })
-  r = input_test.radius[test_trial-1];
-  a = input_test.angle[test_trial-1];
+  r = input_inter.radius[inter_trial-1];
+  a = input_inter.angle[inter_trial-1];
   $(document).ready(function(){draw_stimulus(r, a)})
   $(".slide").hide()
   slide.show()
 }
 
-function test_feedback(click_event) {
+function inter_feedback(click_event) {
   // disable event handlers -> user can only respond once per trial
   $(':button').off("click");
   $(window).off("keypress");
   log_end_time = new Date().getTime();
   choice = click_event.val();
-  log_trial_data("test", test_trial,
-    input_test, choice, log_start_time, log_end_time);
-  test_trial += 1;
-  test_trials_end(test_trial);
+  log_trial_data("inter", inter_trial,
+    input_inter, choice, log_start_time, log_end_time);
+  inter_trial += 1;
+  inter_trials_end(inter_trial);
 }
 
-function test_trials_end(x) {
-// next slide goes back to test_trials_constructor
-  if (x <= MAX_TEST_TRIALS) {
+function inter_trials_end(x) {
+// next slide goes back to inter_trials_constructor
+  if (x <= MAX_INTER_TRIALS) {
     setTimeout(function() {show_next_slide(slides)},
       FEEDBACK_WAIT_TIME)
   }
   else {
-    setTimeout(function() {test_destructor()},
+    setTimeout(function() {inter_destructor()},
       FEEDBACK_WAIT_TIME)
   }
 }
 
-function test_destructor() {
+function inter_destructor() {
 // next_button triggers show_next_slide
-  test_end_time = new Date().getTime()
+  inter_end_time = new Date().getTime()
   if (turk.previewMode == false) {
-      $("#test_slide").append($("<p>").append(next_button))
+      $("#inter_slide").append($("<p>").append(next_button))
   }
 }
 
@@ -830,18 +815,37 @@ function end_exp() {
     exp.age = $('#age').val();
     exp.gender = $('#gender').val();
     exp.turkSubmitTo = turk.turkSubmitTo;
+    // store timing data
     exp.user_rating = user_rating;
     exp.exp_start_time = exp_start_time;
     exp.training_start_time = training_start_time;
     exp.training_end_time = training_end_time;
-    exp.test_start_time = test_start_time;
-    exp.test_end_time = test_end_time;
+    exp.inter_start_time = inter_start_time;
+    exp.inter_end_time = inter_end_time;
     exp.check_start_time = check_start_time;
     exp.check_end_time = check_end_time;
     exp.rate_start_time = rate_start_time;
     exp.rate_end_time = rate_end_time;
     exp.exp_end_time = exp_end_time;
-    // submit to turk
+    // store configs
+    exp.STI_AREA_W = STI_AREA_W;
+    exp.STI_AREA_H = STI_AREA_H;
+    exp.STI_MARGIN = STI_MARGIN;
+    exp.STI_RADIUS_MIN = STI_RADIUS_MIN;
+    exp.STI_RADIUS_MAX = STI_RADIUS_MAX;
+    exp.STI_ANGLE_MIN = STI_ANGLE_MIN;
+    exp.STI_ANGLE_MAX = STI_ANGLE_MAX;
+    exp.SCORE_BAR_W = SCORE_BAR_W;
+    exp.SCORE_BAR_H = SCORE_BAR_H;
+    exp.SCORE_THRESH = SCORE_THRESH;
+    exp.SCORE_MEMORY_MAX = SCORE_MEMORY_MAX;
+    exp.MAX_TRAIN_TRIALS = MAX_TRAIN_TRIALS;
+    exp.MAX_INTER_TRIALS = MAX_INTER_TRIALS;
+    exp.MAX_CHECK_TRIALS = MAX_CHECK_TRIALS;
+    exp.INSTRUCTION_WAIT_TIME = INSTRUCTION_WAIT_TIME;
+    exp.FEEDBACK_WAIT_TIME = FEEDBACK_WAIT_TIME;
+    exp.SAMP_CAT_COND = SAMP_CAT_COND;
+    exp.PREFERENCE = PREFERENCE;
     setTimeout(function() {turk.submit(exp)}, 500)
   }
   else {
@@ -849,3 +853,30 @@ function end_exp() {
       first question before submtting.'))
   }
 }
+
+//####################
+//    tests
+//####################
+
+function inter_input_stat() {
+  var n = 10000;
+  small_var_array = [];
+  big_var_array = [];
+  for (i=0; i<n; i++) {
+    small_var_array.push(sampleSmallVar(STI_RADIUS_MIN, STI_RADIUS_MAX));
+    big_var_array.push(sampleBigVar(STI_ANGLE_MIN, STI_ANGLE_MAX));
+  }
+  console.log("Length array = %s", small_var_array.length)
+  console.log("Mean small var = %s|%s",
+    mean(small_var_array),
+    (STI_RADIUS_MIN + STI_RADIUS_MAX)/2);
+  console.log("Mean big var = %s|%s",
+    mean(big_var_array),
+    (STI_ANGLE_MIN + STI_ANGLE_MAX)/2);
+  console.log("Std small var = %s|%s",
+    std(small_var_array), Math.sqrt(75));
+  console.log("Std big var = %s|%s",
+    std(big_var_array), 30);
+}
+
+inter_input_stat()
