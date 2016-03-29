@@ -176,7 +176,7 @@ function add_check_contents(in_array, max_trials) {
   a_arr = discretize(STI_ANGLE_MIN, STI_ANGLE_MAX, n);
   for (r_split=0; r_split<n_split; r_split++) {
     for (a_split=0; a_split<n_split; a_split++) {
-      sub_r_arr = subarray(r_arr, r_block*n_sub, (r_block+1)*n_sub-1);
+      sub_r_arr = subarray(r_arr, r_split*n_sub, (r_split+1)*n_sub-1);
       sub_a_arr = subarray(a_arr, a_split*n_sub, (a_split+1)*n_sub-1);
       mix_arr = broadcast(sub_r_arr, sub_a_arr);
       mix_arr = _.shuffle(mix_arr);
