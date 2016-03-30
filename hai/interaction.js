@@ -33,7 +33,7 @@
 //####################
 var STI_AREA_W = 300; //PX
 var STI_AREA_H = 300; //px
-var STI_MARGIN = 15; //px
+var STI_MARGIN = 20; //px
 var STI_RADIUS_MIN = STI_MARGIN + Math.random()*50; //px
 var STI_RADIUS_MAX = STI_AREA_W/2 - STI_MARGIN; //px
 var STI_ANGLE_MIN = Math.random()*30; //deg
@@ -46,7 +46,7 @@ var SCORE_THRESH = 0.95; //0.95;
 var SCORE_MEMORY_MAX = 20;
 
 var MAX_TRAIN_TRIALS = 500; //500;
-var MAX_INTER_TRIALS = 30; //30;
+var MAX_INTER_TRIALS = 20; //20;
 var MAX_CHECK_TRIALS = 5*4; //should be multiples of 4;
 
 var INSTRUCTION_WAIT_TIME = 3000; //ms
@@ -792,7 +792,7 @@ function survey_constructor() {
   text.append($("<p>").html('What was this experiment about? <br> \
     <input type="text" id="about" name="about" size="70">'))
   text.append($("<p>").html('What kind of antennas receive \
-    from the relevant station? (eg. small radius, bigger angle) <br> \
+    from the relevant station? (eg. small radius, angle < 45 deg) <br> \
     <input type="text" id="strategy" name="strategy" size="70">'))
   text.append($("<p>").html('Did you use any external learning aids \
     (e.g. pencil and paper)? <br> \
@@ -828,7 +828,7 @@ function end_exp() {
     slide.show()
     // store survey data
     survey_data = {
-      about: $('#about').val().
+      about: $('#about').val(),
       strategy: $('#strategy').val(),
       external_aid: $('#external_aid').val(),
       better: $('#better').val(),
@@ -840,7 +840,7 @@ function end_exp() {
     }
     exp.survey.push(survey_data);
     // store timing data
-    tiem_data = {
+    time_data = {
       user_rating: user_rating,
       exp_start_time: exp_start_time,
       training_start_time: training_start_time,
@@ -875,7 +875,7 @@ function end_exp() {
       SAMP_CAT_COND: SAMP_CAT_COND,
       PREFERENCE: PREFERENCE
     }
-    exp.time.push(time_data);
+    exp.config.push(config_data);
     setTimeout(function() {turk.submit(exp)}, 500)
   }
   else {
