@@ -45,7 +45,7 @@ var SCORE_BAR_H = 20; //px
 var SCORE_THRESH = 0.95; //0.95;
 var SCORE_MEMORY_MAX = 20;
 
-var MAX_TRAIN_TRIALS = 5; //500;
+var MAX_TRAIN_TRIALS = 500; //500;
 var MAX_INTER_TRIALS = 30; //30;
 var MAX_CHECK_TRIALS = 5*4; //should be multiples of 4;
 
