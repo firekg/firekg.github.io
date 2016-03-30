@@ -266,7 +266,7 @@ slides.unshift({ name: "survey", constructor: survey_constructor});
 //    start domino!!
 //####################
 // console.log("Hello, World!") //debug tool!!
-exp = {data: []}
+exp = {data: [], survey: [], time: [], config: []};
 show_next_slide(slides)
 
 function show_next_slide(slides) {
@@ -792,7 +792,7 @@ function survey_constructor() {
   text.append($("<p>").html('What was this experiment about? <br> \
     <input type="text" id="about" name="about" size="70">'))
   text.append($("<p>").html('What kind of antennas receive \
-    from the relevant station? <br> \
+    from the relevant station? (eg. small radius, bigger angle) <br> \
     <input type="text" id="strategy" name="strategy" size="70">'))
   text.append($("<p>").html('Did you use any external learning aids \
     (e.g. pencil and paper)? <br> \
@@ -827,46 +827,55 @@ function end_exp() {
     $(".slide").hide()
     slide.show()
     // store survey data
-    exp.about = $('#about').val();
-    exp.strategy = $('#strategy').val();
-    exp.external_aid = $('#external_aid').val();
-    exp.better = $('#better').val();
-    exp.unclear = $('#unclear').val();
-    exp.comment = $('#comments').val();
-    exp.age = $('#age').val();
-    exp.gender = $('#gender').val();
-    exp.turkSubmitTo = turk.turkSubmitTo;
+    survey_data = {
+      about: $('#about').val().
+      strategy: $('#strategy').val(),
+      external_aid: $('#external_aid').val(),
+      better: $('#better').val(),
+      unclear: $('#unclear').val(),
+      comment: $('#comments').val(),
+      age: $('#age').val(),
+      gender: $('#gender').val(),
+      turkSubmitTo: turk.turkSubmitTo
+    }
+    exp.survey.push(survey_data);
     // store timing data
-    exp.user_rating = user_rating;
-    exp.exp_start_time = exp_start_time;
-    exp.training_start_time = training_start_time;
-    exp.training_end_time = training_end_time;
-    exp.inter_start_time = inter_start_time;
-    exp.inter_end_time = inter_end_time;
-    exp.check_start_time = check_start_time;
-    exp.check_end_time = check_end_time;
-    exp.rate_start_time = rate_start_time;
-    exp.rate_end_time = rate_end_time;
-    exp.exp_end_time = exp_end_time;
+    tiem_data = {
+      user_rating: user_rating,
+      exp_start_time: exp_start_time,
+      training_start_time: training_start_time,
+      training_end_time: training_end_time,
+      inter_start_time: inter_start_time,
+      inter_end_time: inter_end_time,
+      check_start_time: check_start_time,
+      check_end_time: check_end_time,
+      rate_start_time: rate_start_time,
+      rate_end_time: rate_end_time,
+      exp_end_time: exp_end_time
+    }
+    exp.time.push(time_data);
     // store configs
-    exp.STI_AREA_W = STI_AREA_W;
-    exp.STI_AREA_H = STI_AREA_H;
-    exp.STI_MARGIN = STI_MARGIN;
-    exp.STI_RADIUS_MIN = STI_RADIUS_MIN;
-    exp.STI_RADIUS_MAX = STI_RADIUS_MAX;
-    exp.STI_ANGLE_MIN = STI_ANGLE_MIN;
-    exp.STI_ANGLE_MAX = STI_ANGLE_MAX;
-    exp.SCORE_BAR_W = SCORE_BAR_W;
-    exp.SCORE_BAR_H = SCORE_BAR_H;
-    exp.SCORE_THRESH = SCORE_THRESH;
-    exp.SCORE_MEMORY_MAX = SCORE_MEMORY_MAX;
-    exp.MAX_TRAIN_TRIALS = MAX_TRAIN_TRIALS;
-    exp.MAX_INTER_TRIALS = MAX_INTER_TRIALS;
-    exp.MAX_CHECK_TRIALS = MAX_CHECK_TRIALS;
-    exp.INSTRUCTION_WAIT_TIME = INSTRUCTION_WAIT_TIME;
-    exp.FEEDBACK_WAIT_TIME = FEEDBACK_WAIT_TIME;
-    exp.SAMP_CAT_COND = SAMP_CAT_COND;
-    exp.PREFERENCE = PREFERENCE;
+    config_data = {
+      STI_AREA_W: STI_AREA_W,
+      STI_AREA_H: STI_AREA_H,
+      STI_MARGIN: STI_MARGIN,
+      STI_RADIUS_MIN: STI_RADIUS_MIN,
+      STI_RADIUS_MAX: STI_RADIUS_MAX,
+      STI_ANGLE_MIN: STI_ANGLE_MIN,
+      STI_ANGLE_MAX: STI_ANGLE_MAX,
+      SCORE_BAR_W: SCORE_BAR_W,
+      SCORE_BAR_H: SCORE_BAR_H,
+      SCORE_THRESH: SCORE_THRESH,
+      SCORE_MEMORY_MAX: SCORE_MEMORY_MAX,
+      MAX_TRAIN_TRIALS: MAX_TRAIN_TRIALS,
+      MAX_INTER_TRIALS: MAX_INTER_TRIALS,
+      MAX_CHECK_TRIALS: MAX_CHECK_TRIALS,
+      INSTRUCTION_WAIT_TIME: INSTRUCTION_WAIT_TIME,
+      FEEDBACK_WAIT_TIME: FEEDBACK_WAIT_TIME,
+      SAMP_CAT_COND: SAMP_CAT_COND,
+      PREFERENCE: PREFERENCE
+    }
+    exp.time.push(time_data);
     setTimeout(function() {turk.submit(exp)}, 500)
   }
   else {
