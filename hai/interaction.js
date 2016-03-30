@@ -45,7 +45,7 @@ var SCORE_BAR_H = 20; //px
 var SCORE_THRESH = 0.95; //0.95;
 var SCORE_MEMORY_MAX = 20;
 
-var MAX_TRAIN_TRIALS = 500;
+var MAX_TRAIN_TRIALS = 5; //500;
 var MAX_INTER_TRIALS = 30; //30;
 var MAX_CHECK_TRIALS = 5*4; //should be multiples of 4;
 
@@ -144,7 +144,7 @@ function add_input_contents(in_array, max_trials) {
         a = s - 40;
       }
     }
-    in_array.truth.push(c);
+    in_array.truth.push(isRelevant(c));
     in_array.radius.push(r);
     in_array.angle.push(a);
   }
@@ -158,6 +158,14 @@ function randClass() {
   }
 }
 
+function isRelevant(c) {
+  if (c==PREFERENCE) {
+    return "Relevant";
+  } else {
+    return "Irrelevant";
+  }
+}
+
 //####################
 //    discrete random inputs
 //####################
@@ -167,13 +175,14 @@ add_check_contents(input_check, MAX_CHECK_TRIALS);
 function add_check_contents(in_array, max_trials) {
   var n, n_split, n_sub, n_in_block;
   var r_arr, a_arr, sub_r_arr, sub_a_arr;
-  var mix_arr;
+  var mix_arr, temp_arr;
   n = 16;
   n_split = 2;
   n_sub = n/n_split;
   n_in_block = max_trials/n_split/n_split;
-  r_arr = discretize(STI_RADIUS_MIN, STI_RADIUS_MAX, n);
-  a_arr = discretize(STI_ANGLE_MIN, STI_ANGLE_MAX, n);
+  r_arr = discretize(STI_MARGIN, STI_AREA_W/2 - STI_MARGIN, n);
+  a_arr = discretize(1, 180-1, n);
+  temp_arr = [];
   for (r_split=0; r_split<n_split; r_split++) {
     for (a_split=0; a_split<n_split; a_split++) {
       sub_r_arr = subarray(r_arr, r_split*n_sub, (r_split+1)*n_sub-1);
@@ -181,15 +190,19 @@ function add_check_contents(in_array, max_trials) {
       mix_arr = broadcast(sub_r_arr, sub_a_arr);
       mix_arr = _.shuffle(mix_arr);
       for (i=0; i<n_in_block; i++) {
-        in_array.truth.push("N/a");
-        in_array.radius.push(mix_arr[i][0]);
-        in_array.angle.push(mix_arr[i][1]);
+        temp_arr.push(mix_arr[i]);
       }
     }
   }
+  temp_arr = _.shuffle(temp_arr);
+  for (i=0; i<temp_arr.length; i++) {
+    in_array.truth.push("N//A");
+    in_array.radius.push(temp_arr[i][0]);
+    in_array.angle.push(temp_arr[i][1]);
+  }
 }
 
-console.log(input_check)
+// console.log(input_check)
 
 //####################
 //    buttons & slider
@@ -240,13 +253,13 @@ for (i=0; i<MAX_INTER_TRIALS; i++){
     {name: "inter_trial", constructor: inter_trials_constructor}
   )
 }
+slides.unshift({ name: "rating", constructor: rating_constructor});
 slides.unshift({ name: "check", constructor: check_constructor});
 for (i=0; i<MAX_CHECK_TRIALS; i++){
   slides.unshift(
     {name: "check_trial", constructor: check_trials_constructor}
   )
 }
-slides.unshift({ name: "rating", constructor: rating_constructor});
 slides.unshift({ name: "survey", constructor: survey_constructor});
 
 //####################
@@ -254,7 +267,7 @@ slides.unshift({ name: "survey", constructor: survey_constructor});
 //####################
 // console.log("Hello, World!") //debug tool!!
 exp = {data: []}
-// show_next_slide(slides)
+show_next_slide(slides)
 
 function show_next_slide(slides) {
   $( ".slide" ).remove()
@@ -268,15 +281,15 @@ function show_next_slide(slides) {
 function welcome_constructor() {
   slide = $("<div class='slide' id='welcome_slide' >")
   text = $("<div class='block-text' id='welcome_text'>")
-  text.append($("<p>").html("In this experiment, we're interested in how \
-    people interact with recommender systems. The experiemnt has four \
-    parts: \
+  text.append($("<p>").html("In this experiment, we are interested \
+    in how people interact with recommender systems. \
+    The experiemnt has four parts. \
     First, you will do a classification task to learn what kind of \
-    &#34antennas&#34 receive from which music station. \
+    &#34antennas&#34 receive from the relevant music station. \
     Second, you will interact with a recommender system. \
-    Third, we will check if you still remember how the antenna works. \
-    Finally, you will rate how well you think the recommender system did. \
-    The whole experiment will take about 10 minutes."))
+    Third, you will rate the recommender system. \
+    Finally, we will check if you still remember how the antenna works. \
+    The whole experiment will take roughly 5 minutes."))
   text.append($("<p>").html("(Note: you won't be able to preview this \
     HIT before accepting it.)"))
   text.append($("<p>").html("By answering the following questions, you \
@@ -297,7 +310,7 @@ function welcome_constructor() {
     'http://www.amazon.com/gp/help/customer/display.html?nodeId=16465241'\
     > here.  </a>"))
   text.append($("<p>").html("Please proceed with the Start button \
-    after you have read the instructions."))
+    once you have read the instructions."))
   slide.append(text)
   $("body").append(slide)
   $(".slide").hide()
@@ -321,23 +334,27 @@ function training_constructor() {
   training_start_time = new Date().getTime();
   slide = $("<div class='slide'>")
   text = $("<div class='block-text'>")
+  text.append($("<p>").html('Please read the following instructions \
+    carefully.'))
   text.append($("<p>").html('In this first part, \
-    you will see "loop antennas" that received signals from one of two \
-    music stations (Beat or Sonic). The station received depended \
-    in some way on the antenna&#39s overall radius \
-    and the orientation of the inner diameter. \
-    Note that these antennas are noisy and can occastionally \
+    you will see "loop antennas" that receive signals from one of two \
+    music stations. \
+    The station received depended in some way on the antenna&#39s \
+    overall radius and the orientation of its inner diameter. \
+    These antennas are noisy and can occasionally \
     receive from the wrong station.'))
-  text.append($("<p>").html('The goal here is to learn what kind of \
-    antennas most often receive from which station. After an antenna is\
-    displayed, you should respond by either clicking on the \
-    corresponding station, or by using the keyboard \
-    ("z" for Beat and "m" Sonic). Upon responding, you will \
-    receive a feedback on correctness. \
+  text.append($("<p>").html('One of these station is <b>relevant</b> \
+    for training the recommender system later. \
+    The goal here is to learn what kind of antennas most often \
+    receive from the relevant station. \
+    After an antenna is displayed, you can respond by clicking \
+    on a button (Relevant/Irrelevant), or by using the keyboard \
+    ("z" for Relevant / "m" for Irrelevant). \
+    Upon responding, you will receive a feedback on correctness. \
     You will advance to the next part once you can distinguish the \
     antennas with 95% accuracy.'))
   text.append($("<p>").html("Please click Next after you have read \
-    through the instructions."))
+    the instructions."))
   slide.append(text)
   $("body").append(slide)
   $(".slide").hide()
@@ -365,11 +382,11 @@ function training_trials_constructor() {
   row_stimulus_area.append(stimulus_area)
   // response by button press
   row_buttons.append(
-      $("<button class='btn btn-default beat' value='Beat'>")
-        .text('Beat (z)')
+      $("<button class='btn btn-default rel' value='Relevant'>")
+        .text('Relevant (z)')
         .one("click", function() {training_feedback($(this))}),
-      $("<button class='btn btn-default sonic' value='Sonic'>")
-        .text('Sonic (m)')
+      $("<button class='btn btn-default irrel' value='Irrelevant'>")
+        .text('Irrelevant (m)')
         .one("click", function() {training_feedback($(this))})
   )
   table.append(
@@ -389,8 +406,8 @@ function training_trials_constructor() {
   // response by key press
   $(window).on("keypress", function (event) {
     if (exp.training_complete) { return }
-    if (event.which == 122) {training_feedback($("button.beat"))}
-    if (event.which == 109) {training_feedback($("button.sonic"))}
+    if (event.which == 122) {training_feedback($("button.rel"))}
+    if (event.which == 109) {training_feedback($("button.irrel"))}
   })
   r = input_train.radius[training_trial-1];
   a = input_train.angle[training_trial-1];
@@ -531,7 +548,8 @@ function training_destructor() {
 
 function warning_constructor() {
   slide = $("<div class='slide'>")
-  slide.append($("<p>").html("Warning!!!"))
+  slide.append($("<p>").html("Sorry, you have reached the limit \
+    of training trials. Please return the HIT."))
   $("body").append(slide)
   $(".slide").hide()
   slide.show()
@@ -542,19 +560,16 @@ function inter_constructor() {
   inter_start_time = new Date().getTime();
   slide = $("<div class='slide'>")
   text = $("<div class='block-text'>")
-  text.append($("<p>").html('In this part of the experiment, \
-    pretend that you like the <b>'+PREFERENCE+'</b> better. \
-    You are going to train the recommender system by telling it if the \
-    antenna it chose will receive from the station that you like \
-    (that&#39s the Beat). \
-    You can do this this either by clicking the "Like" or "Dislike" \
-    button, or by using the keyboard \
-    ("z" for Like and "m" for Dislike). \
-    While you are trianing the system, pleases also pay attention to \
-    how well it is performing over time. You will be asked to rate \
-    the system at the end.'))
+  text.append($("<p>").html('Well done!'));
+  text.append($("<p>").html('Now, you are going to train the \
+    recommender system by telling it if the \
+    antenna it chose will receive from the relevant station. \
+    You can respond as in the previous part. \
+    While you are trianing the system, please also pay attention to \
+    <b>how well it is performing over time</b>. \
+    You will be asked to rate the system later.'))
   text.append($("<p>").html("Please click Next after you have read \
-    through the instructions."))
+    the instructions."))
   slide.append(text)
   $("body").append(slide)
   $(".slide").hide()
@@ -579,11 +594,11 @@ function inter_trials_constructor() {
   row_stimulus_area.append(stimulus_area)
   // response by button press
   row_buttons.append(
-      $("<button class='btn btn-default like' value='Like'>")
-        .text('Like (z)')
+      $("<button class='btn btn-default rel' value='Relevant'>")
+        .text('Relevant (z)')
         .one("click", function() {inter_feedback($(this))}),
-      $("<button class='btn btn-default dislike' value='Dislike'>")
-        .text('Dislike (m)')
+      $("<button class='btn btn-default irrel' value='Irrelevant'>")
+        .text('Irrelevant (m)')
         .one("click", function() {inter_feedback($(this))})
   )
   table.append(
@@ -591,8 +606,9 @@ function inter_trials_constructor() {
       row_buttons
   )
   text.append(
-    $("<p>").html("Please remember to pretend that you like the \
-      <b>"+PREFERENCE+"</b>. The Next button will \
+    $("<p>").html("<b>Pleases pay attention to \
+      how well the recommender is performing over time.</b> \
+      The Next button will \
       appear once you finish all the trials. (Trials " + inter_trial
        + "/" + MAX_INTER_TRIALS + ")"),
     table
@@ -602,8 +618,8 @@ function inter_trials_constructor() {
   // response by key press
   $(window).on("keypress", function (event) {
     if (exp.training_complete) { return }
-    if (event.which == 122) {inter_feedback($("button.like"))}
-    if (event.which == 109) {inter_feedback($("button.dislike"))}
+    if (event.which == 122) {inter_feedback($("button.rel"))}
+    if (event.which == 109) {inter_feedback($("button.irrel"))}
   })
   r = input_inter.radius[inter_trial-1];
   a = input_inter.angle[inter_trial-1];
@@ -618,6 +634,8 @@ function inter_feedback(click_event) {
   $(window).off("keypress");
   log_end_time = new Date().getTime();
   choice = click_event.val();
+  slide.append($("<p class='feedback-text'>").
+    html(`Choice received`).css("color", "gray"))
   log_trial_data("inter", inter_trial,
     input_inter, choice, log_start_time, log_end_time);
   inter_trial += 1;
@@ -644,18 +662,37 @@ function inter_destructor() {
   }
 }
 
+function rating_constructor() {
+//Rate button triggers show_next_slide
+  rate_start_time = new Date().getTime();
+  slide = $("<div class='slide' id='rating_slide' >")
+  text = $("<div class='block-text' id='rating_text'>");
+  text.append($("<p>").html('Please rate the recommender system \
+    by adjusting the slide bar. \
+    Click "Rate" to submit the rating and proeed to the \
+    final part.'))
+  text.append(slider)
+  text.append($("<p>").html('<span style="float:left">Very poor</span>\
+    <span style="float:right">Excellent</span>'))
+  text.append($("<p>").html("<br>"))
+  slide.append(text)
+  $("body").append(slide)
+  //console.log("rating value = %s", $("#rating_slider").val())
+  $(".slide").hide()
+  slide.show()
+}
+
 function check_constructor() {
 // next button triggers check_trials_constructor
   check_start_time = new Date().getTime();
   slide = $("<div class='slide'>")
   text = $("<div class='block-text'>")
-  text.append($("<p>").html("Before you rate the recommender system, \
-    we just want to see if you still remember how the antenna works. \
-    This is the same as the first part of the experiment, except that \
-    you will not be given feedback. There will a total of "
-    + MAX_CHECK_TRIALS + " trials."))
+  text.append($("<p>").html("Finally, \
+    we want to check if you still remember how the antenna works. \
+    Unlike the first part, you will not receive feedback. \
+    There will be a total of " + MAX_CHECK_TRIALS + " trials."))
   text.append($("<p>").html("Please click Next after you have read \
-    through the instructions."))
+    the instructions."))
   slide.append(text)
   $("body").append(slide)
   $(".slide").hide()
@@ -680,11 +717,11 @@ function check_trials_constructor() {
   row_stimulus_area.append(stimulus_area)
   // response by button press
   row_buttons.append(
-      $("<button class='btn btn-default beat' value='Beat'>")
-        .text('Beat (z)')
+      $("<button class='btn btn-default rel' value='Relevant'>")
+        .text('Relevant (z)')
         .one("click", function() {check_feedback($(this))}),
-      $("<button class='btn btn-default sonic' value='Sonic'>")
-        .text('Sonic (m)')
+      $("<button class='btn btn-default irrel' value='Irrelevant'>")
+        .text('Irrelevant (m)')
         .one("click", function() {check_feedback($(this))})
   )
   table.append(
@@ -702,8 +739,8 @@ function check_trials_constructor() {
   // response by key press
   $(window).on("keypress", function (event) {
     if (exp.training_complete) { return }
-    if (event.which == 122) {check_feedback($("button.beat"))}
-    if (event.which == 109) {check_feedback($("button.sonic"))}
+    if (event.which == 122) {check_feedback($("button.rel"))}
+    if (event.which == 109) {check_feedback($("button.irrel"))}
   })
   r = input_check.radius[check_trial-1];
   a = input_check.angle[check_trial-1];
@@ -718,6 +755,8 @@ function check_feedback(click_event) {
   $(window).off("keypress");
   log_end_time = new Date().getTime();
   choice = click_event.val();
+  slide.append($("<p class='feedback-text'>").
+    html(`Choice received`).css("color", "gray"))
   log_trial_data("check", check_trial,
     input_check, choice, log_start_time, log_end_time);
   check_trial += 1;
@@ -744,25 +783,6 @@ function check_destructor() {
   }
 }
 
-function rating_constructor() {
-//Rate button triggers show_next_slide
-  rate_start_time = new Date().getTime();
-  slide = $("<div class='slide' id='rating_slide' >")
-  text = $("<div class='block-text' id='rating_text'>");
-  text.append($("<p>").html('Please rate how you think \
-    the recommender system did by adjusting the slide bar. \
-    Then click "Rate" to submit the rating and proeed to the survey.'))
-  text.append(slider)
-  text.append($("<p>").html('<span style="float:left">Very poor</span>\
-    <span style="float:right">Excellent</span>'))
-  text.append($("<p>").html("<br>"))
-  slide.append(text)
-  $("body").append(slide)
-  //console.log("rating value = %s", $("#rating_slider").val())
-  $(".slide").hide()
-  slide.show()
-}
-
 function survey_constructor() {
 // submit button triggers end_exp
   slide = $("<div class='slide' id='survey_slide' >")
@@ -771,16 +791,16 @@ function survey_constructor() {
     Please answer the following questions."))
   text.append($("<p>").html('What was this experiment about? <br> \
     <input type="text" id="about" name="about" size="70">'))
+  text.append($("<p>").html('What kind of antennas receive \
+    from the relevant station? <br> \
+    <input type="text" id="strategy" name="strategy" size="70">'))
+  text.append($("<p>").html('Did you use any external learning aids \
+    (e.g. pencil and paper)? <br> \
+    <input type="text" id="external_aid" name="external_aid" size="70">'))
   text.append($("<p>").html('How can we make this experiment better? \
     <br> <input type="text" id="better" name="better" size="70">'))
   text.append($("<p>").html('Was anything unclear? <br> \
     <input type="text" id="unclear" name="unclear" size="70">'))
-  text.append($("<p>").html('Did you use any external learning aids \
-    (e.g. pencil and paper)? <br> \
-    <input type="text" id="external_aid" name="external_aid" size="70">'))
-  text.append($("<p>").html('Did you use any particular strategy \
-    to learn the relationship between antennas and stations? <br> \
-    <input type="text" id="strategy" name="strategy" size="70">'))
   text.append($("<p>").html('Any other comments for us? \
   <br> <input type="text" id="comments" name="comments" size="70">'))
   text.append($("<p>").html('What is your age? <br> \
@@ -797,7 +817,7 @@ function survey_constructor() {
 
 function end_exp() {
   // check survey data,then submit exp to turk
-  if ($('#about').val().length != 0) {
+  if ($('#about').val().length != 0 || $('#strategy').val().length != 0) {
     slide = $("<div class='slide' id='submit' >")
     text = $("<div class='block-text' id='submit_text'>")
     text.append($("<p>").html("You're submit - thanks for " +
@@ -808,11 +828,11 @@ function end_exp() {
     slide.show()
     // store survey data
     exp.about = $('#about').val();
+    exp.strategy = $('#strategy').val();
+    exp.external_aid = $('#external_aid').val();
     exp.better = $('#better').val();
     exp.unclear = $('#unclear').val();
     exp.comment = $('#comments').val();
-    exp.external_aid = $('#external_aid').val();
-    exp.strategy = $('#strategy').val();
     exp.age = $('#age').val();
     exp.gender = $('#gender').val();
     exp.turkSubmitTo = turk.turkSubmitTo;
@@ -851,7 +871,7 @@ function end_exp() {
   }
   else {
     text.append($("<p style='color:red'>").html('Please answer the \
-      first question before submtting.'))
+      first two questions before submtting.'))
   }
 }
 
@@ -964,10 +984,10 @@ function inter_input_stat() {
     big_var_array.push(sampleBigVar(STI_ANGLE_MIN, STI_ANGLE_MAX));
   }
   console.log("Length array = %s", small_var_array.length)
-  console.log("Mean small var = %s|%s",
+  console.log("Mean radisu = %s|%s",
     mean(small_var_array),
     (STI_RADIUS_MIN + STI_RADIUS_MAX)/2);
-  console.log("Mean big var = %s|%s",
+  console.log("Mean angle = %s|%s",
     mean(big_var_array),
     (STI_ANGLE_MIN + STI_ANGLE_MAX)/2);
   console.log("Std small var = %s|%s",
@@ -976,4 +996,4 @@ function inter_input_stat() {
     std(big_var_array), 30);
 }
 
-inter_input_stat()
+// inter_input_stat()
