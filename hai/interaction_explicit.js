@@ -551,8 +551,8 @@ function inter_constructor() {
   slide = $("<div class='slide'>")
   text = $("<div class='block-text'>")
   text.append($("<p>").html('Well done!'));
-  text.append($("<p>").html('Now, pretend that you like <b>'
-    + PREFERENCE + '</b>.'
+  text.append($("<p>").html('Now, pretend that you like '
+    + PREFERENCE + '.'
     'You are going to train the recommender system by telling it if the \
     antenna it chose will receive from the station you like. \
     You can respond by cliking a button (like/dislike), or by using \
@@ -598,8 +598,8 @@ function inter_trials_constructor() {
       row_buttons
   )
   text.append(
-    $("<p>").html("Remember that you like <b>"\
-      + PREFERENCE + "</b>."
+    $("<p>").html("Remember that you like"\
+      + PREFERENCE + "."
       "The Next button will appear once you finish all the trials. \
       (Trials " + inter_trial + "/" + MAX_INTER_TRIALS + ")"),
     table
