@@ -335,9 +335,8 @@ function training_constructor() {
     overall radius and the orientation of its inner diameter. \
     These antennas are noisy and can occasionally \
     receive from the wrong station.'))
-  text.append($("<p>").html('
-    The goal here is to learn what kind of antennas most often \
-    receive from the which station. \
+  text.append($("<p>").html('The goal here is to learn what kind \
+    of antennas most often receive from the which station. \
     After an antenna is displayed, you can respond by clicking \
     on a button (Beat/Sonic), or by using the keyboard \
     ("z" for Beat / "m" for Sonic). \
