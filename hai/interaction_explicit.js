@@ -33,8 +33,9 @@
 //####################
 var STI_AREA_W = 300; //PX
 var STI_AREA_H = 300; //px
-var STI_MARGIN = 15; //px
-var STI_RADIUS_MIN = STI_MARGIN + Math.random()*50; //px
+var STI_MARGIN = 50; //px
+var STI_SHIFT = 40; //px or deg
+var STI_RADIUS_MIN = STI_MARGIN + Math.random()*10; //px
 var STI_RADIUS_MAX = STI_AREA_W/2 - STI_MARGIN; //px
 var STI_ANGLE_MIN = Math.random()*30; //deg
 var STI_ANGLE_MAX = STI_ANGLE_MIN + 150; //deg
@@ -115,33 +116,33 @@ function add_input_contents(in_array, max_trials) {
       s = sampleSmallVar(min_r, max_r);
       a = sampleBigVar(min_a, max_a);
       if ( c == "Beat" ) {
-        r = s - 40;
+        r = s - STI_SHIFT;
       } else if ( c == "Sonic") {
-        r = s + 40;
+        r = s + STI_SHIFT;
       }
     } else if (cond[0] == "SR" && cond[1] == "Sonic") {
       s = sampleSmallVar(min_r, max_r);
       a = sampleBigVar(min_a, max_a);
       if ( c == "Beat" ) {
-        r = s + 40;
+        r = s + STI_SHIFT;
       } else if ( c == "Sonic") {
-        r = s - 40;
+        r = s - STI_SHIFT;
       }
     } else if (cond[0] == "SA" && cond[1] == "Beat") {
       s = sampleSmallVar(min_a, max_a);
       r = sampleBigVar(min_r, max_r);
       if ( c == "Beat" ) {
-        a = s - 40;
+        a = s - STI_SHIFT;
       } else if ( c == "Sonic") {
-        a = s + 40;
+        a = s + STI_SHIFT;
       }
     } else if (cond[0] == "SA" && cond[1] == "Sonic") {
       s = sampleSmallVar(min_a, max_a);
       r = sampleBigVar(min_r, max_r);
       if ( c == "Beat" ) {
-        a = s + 40;
+        a = s + STI_SHIFT;
       } else if ( c == "Sonic") {
-        a = s - 40;
+        a = s - STI_SHIFT;
       }
     }
     in_array.truth.push(c);
@@ -172,8 +173,9 @@ function add_check_contents(in_array, max_trials) {
   n_split = 2;
   n_sub = n/n_split;
   n_in_block = max_trials/n_split/n_split;
-  r_arr = discretize(STI_MARGIN, STI_AREA_W/2 - STI_MARGIN, n);
-  a_arr = discretize(1, 180-1, n);
+  r_arr = discretize(STI_MARGIN - STI_SHIFT,
+    STI_AREA_W/2 - STI_MARGIN + STI_SHIFT, n);
+  a_arr = discretize(15, 180-15, n);
   temp_arr = [];
   for (r_split=0; r_split<n_split; r_split++) {
     for (a_split=0; a_split<n_split; a_split++) {
@@ -274,21 +276,22 @@ function welcome_constructor() {
   slide = $("<div class='slide' id='welcome_slide' >")
   text = $("<div class='block-text' id='welcome_text'>")
   text.append($("<p>").html("In this experiment, we are interested \
-    in how people interact with recommender systems. \
-    The experiemnt has four parts. \
-    First, you will do a classification task to learn what kind of \
-    &#34antennas&#34 receive from what music station. \
-    Second, you will interact with a recommender system. \
-    Third, you will rate the recommender system. \
+    in how people interact with computer algorithms. \
+    The experiment has four parts. \
+    First, you will play a classification game to learn what kind \
+    of &#34antennas&#34 receive from which &#34music station.&#34 \
+    Second, you will interact with an algorithm and teach it \
+    to recommed a particular station. \
+    Third, you will rate the recommender algorithm. \
     Finally, we will check if you still remember how the antenna works. \
     The whole experiment will take roughly 5 minutes."))
   text.append($("<p>").html("(Note: you won't be able to preview this \
     HIT before accepting it.)"))
   text.append($("<p>").html("By answering the following questions, you \
-    are participating in a study being performed by cognitive scientists \
+    are participating in a study being performed by researchers \
     in the Department of Mathmematics & Computer Science at Rutgers \
-    University. If you have questions about this research, please contact \
-    us at cocoscishafto@gmail.com. \
+    University. If you have questions about this research, \
+    please contact us at cocoscishafto@gmail.com. \
     You must be at least 18 years old to participate. \
     Your participation in this research is voluntary. You may decline to \
     answer any or all of the following questions. You may decline further \
@@ -328,17 +331,18 @@ function training_constructor() {
   text = $("<div class='block-text'>")
   text.append($("<p>").html('Please read the following instructions \
     carefully.'))
-  text.append($("<p>").html('In this first part, \
-    you will see "loop antennas" that receive signals from one of two \
-    music stations (Beat or Sonic). \
+  text.append($("<p>").html("In this first part, \
+    you will see &#34loop antennas&#34 that receive signals from \
+    one of two music stations (Beat or Sonic). \
     The station received depended in some way on the antenna&#39s \
-    overall radius and the orientation of its inner diameter. \
+    overall <b>radius</b> and the <b>orientation</b> of its \
+    inner diameter. \
     These antennas are noisy and can occasionally \
-    receive from the wrong station.'))
+    receive from the wrong station."))
   text.append($("<p>").html('The goal here is to learn what kind \
-    of antennas most often receive from the which station. \
+    of antennas most often receive from which station. \
     After an antenna is displayed, you can respond by clicking \
-    on a button (Beat/Sonic), or by using the keyboard \
+    on a button (Beat / Sonic), or by using the keyboard \
     ("z" for Beat / "m" for Sonic). \
     Upon responding, you will receive a feedback on correctness. \
     You will advance to the next part once you can distinguish the \
@@ -427,7 +431,7 @@ function draw_score_bar() {
   //show score as text
   ctx.fillStyle = 'white';
   ctx.font = 0.8*SCORE_BAR_H + "px Arial";
-  ctx.fillText(frac*100 + "%",
+  ctx.fillText(Math.floor(frac*100) + "%",
     SCORE_BAR_W/2, SCORE_BAR_H - 0.1*SCORE_BAR_H);
 }
 
@@ -551,14 +555,18 @@ function inter_constructor() {
   slide = $("<div class='slide'>")
   text = $("<div class='block-text'>")
   text.append($("<p>").html('Well done!'));
-  text.append($("<p>").html('Now, pretend that you like '+PREFERENCE+'. \
-    You are going to train the recommender system by telling it if the \
-    antenna it chose will receive from the station you like. \
-    You can respond by cliking a button (like/dislike), or by using \
-    the keyboard ("z" for like \ "m for dislike"). \
-    While you are training the system, please also pay attention to \
-    if it is improving. \
-    You will be asked to rate the system later.'))
+  text.append($("<p>").html('Now, pretend that you like <b>'
+    + PREFERENCE + '</b>.'))
+  text.append($("<p>").html('You are going to teach an algorithm \
+    to recommend the station that you like. \
+    You do so by telling the algorithn whether the antenna \
+    it chose will receive from your preferred station. \
+    In this part, you can only respond by cliking a button \
+    (like/dislike). \
+    This is to encourage you to pay attention to whether the \
+    algorithm is improving, that is, whether it increasingly \
+    chooses antennas that recieve from the station that you like. \
+    You will be asked to rate the algorithm later.'))
   text.append($("<p>").html("Please click Next after you have read \
     the instructions."))
   slide.append(text)
@@ -586,10 +594,10 @@ function inter_trials_constructor() {
   // response by button press
   row_buttons.append(
       $("<button class='btn btn-default like' value='Like'>")
-        .text('Like (z)')
+        .text('Like')
         .one("click", function() {inter_feedback($(this))}),
       $("<button class='btn btn-default dislike' value='Dislike'>")
-        .text('Dislike (m)')
+        .text('Dislike')
         .one("click", function() {inter_feedback($(this))})
   )
   table.append(
@@ -597,7 +605,7 @@ function inter_trials_constructor() {
       row_buttons
   )
   text.append(
-    $("<p>").html("Remember that you like "+ PREFERENCE + ". \
+    $("<p>").html("Remember that you like <b>"+ PREFERENCE + "</b>. \
       The Next button will appear once you finish all the trials. \
       (Trials " + inter_trial + "/" + MAX_INTER_TRIALS + ")"),
     table
@@ -605,11 +613,11 @@ function inter_trials_constructor() {
   slide.append(text)
   $("body").append(slide)
   // response by key press
-  $(window).on("keypress", function (event) {
-    if (exp.training_complete) { return }
-    if (event.which == 122) {inter_feedback($("button.like"))}
-    if (event.which == 109) {inter_feedback($("button.dislike"))}
-  })
+  // $(window).on("keypress", function (event) {
+  //   if (exp.training_complete) { return }
+  //   if (event.which == 122) {inter_feedback($("button.like"))}
+  //   if (event.which == 109) {inter_feedback($("button.dislike"))}
+  // })
   r = input_inter.radius[inter_trial-1];
   a = input_inter.angle[inter_trial-1];
   $(document).ready(function(){draw_stimulus(r, a)})
@@ -656,8 +664,9 @@ function rating_constructor() {
   rate_start_time = new Date().getTime();
   slide = $("<div class='slide' id='rating_slide' >")
   text = $("<div class='block-text' id='rating_text'>");
-  text.append($("<p>").html('Please rate the recommender system \
-    by adjusting the slide bar. \
+  text.append($("<p>").html('Did the algorithm eventually learn to \
+    recommend your preferred station? \
+    Please rate how well it did by adjusting the slide bar. \
     Click "Rate" to submit the rating and proeed to the \
     final part.'))
   text.append(slider)
@@ -677,8 +686,8 @@ function check_constructor() {
   slide = $("<div class='slide'>")
   text = $("<div class='block-text'>")
   text.append($("<p>").html("Finally, \
-    we want to check if you still remember how the antenna works. \
-    Unlike the first part, you will not receive feedback. \
+    we want to check if you still remember how the antennas work. \
+    Unlike the first part, you will not receive corrective feedback. \
     There will be a total of " + MAX_CHECK_TRIALS + " trials."))
   text.append($("<p>").html("Please click Next after you have read \
     the instructions."))
@@ -849,6 +858,7 @@ function end_exp() {
       STI_AREA_W: STI_AREA_W,
       STI_AREA_H: STI_AREA_H,
       STI_MARGIN: STI_MARGIN,
+      STI_SHIFT: STI_SHIFT,
       STI_RADIUS_MIN: STI_RADIUS_MIN,
       STI_RADIUS_MAX: STI_RADIUS_MAX,
       STI_ANGLE_MIN: STI_ANGLE_MIN,
