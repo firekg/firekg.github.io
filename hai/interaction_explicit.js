@@ -283,7 +283,7 @@ function welcome_constructor() {
     Second, you will interact with an algorithm and teach it \
     to recommed a particular station. \
     Third, you will rate the recommender algorithm. \
-    Finally, we will check if you still remember how the antenna works. \
+    Finally, we will check if you still remember how the antennas work. \
     The whole experiment will take roughly 5 minutes."))
   text.append($("<p>").html("(Note: you won't be able to preview this \
     HIT before accepting it.)"))
