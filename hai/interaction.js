@@ -33,7 +33,7 @@
 //####################
 var STI_AREA_W = 300; //PX
 var STI_AREA_H = 300; //px
-var STI_MARGIN = 20; //px
+var STI_MARGIN = 15; //px
 var STI_RADIUS_MIN = STI_MARGIN + Math.random()*50; //px
 var STI_RADIUS_MAX = STI_AREA_W/2 - STI_MARGIN; //px
 var STI_ANGLE_MIN = Math.random()*30; //deg
@@ -565,8 +565,8 @@ function inter_constructor() {
     recommender system by telling it if the \
     antenna it chose will receive from the relevant station. \
     You can respond as in the previous part. \
-    While you are trianing the system, please also pay attention to \
-    <b>how well it is performing over time</b>. \
+    While you are training the system, please also pay attention to \
+    if it is improving. \
     You will be asked to rate the system later.'))
   text.append($("<p>").html("Please click Next after you have read \
     the instructions."))
@@ -606,8 +606,8 @@ function inter_trials_constructor() {
       row_buttons
   )
   text.append(
-    $("<p>").html("<b>Pleases pay attention to \
-      how well the recommender is performing over time.</b> \
+    $("<p>").html("Pleases pay attention to \
+      if the recommender is improving. \
       The Next button will \
       appear once you finish all the trials. (Trials " + inter_trial
        + "/" + MAX_INTER_TRIALS + ")"),
