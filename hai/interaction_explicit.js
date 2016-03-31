@@ -559,7 +559,7 @@ function inter_constructor() {
     + PREFERENCE + '</b>.'))
   text.append($("<p>").html('You are going to teach an algorithm \
     to recommend the station that you like. \
-    You do so by telling the algorithn whether the antenna \
+    You will do so by telling the algorithm whether the antenna \
     it chose will receive from your preferred station. \
     In this part, you can only respond by cliking a button \
     (like/dislike). \
@@ -791,7 +791,7 @@ function survey_constructor() {
     <input type="text" id="about" name="about" size="70">'))
   text.append($("<p>").html('What kind of antennas receive \
     from the ' + PREFERENCE + '? \
-    (eg. small radius, angle < 45 deg) <br> \
+    (eg. small radius, orientation < 45 deg) <br> \
     <input type="text" id="strategy" name="strategy" size="70">'))
   text.append($("<p>").html('Did you use any external learning aids \
     (e.g. pencil and paper)? <br> \
