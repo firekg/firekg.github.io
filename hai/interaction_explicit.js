@@ -781,7 +781,8 @@ function survey_constructor() {
   text.append($("<p>").html('What was this experiment about? <br> \
     <input type="text" id="about" name="about" size="70">'))
   text.append($("<p>").html('What kind of antennas receive \
-    from the' + PREFERENCE + '? (eg. small radius, angle < 45 deg) <br> \
+    from the ' + PREFERENCE + '? \
+    (eg. small radius, angle < 45 deg) <br> \
     <input type="text" id="strategy" name="strategy" size="70">'))
   text.append($("<p>").html('Did you use any external learning aids \
     (e.g. pencil and paper)? <br> \
