@@ -270,7 +270,7 @@ function show_next_slide(slides) {
 }
 
 //####################
-//    functions in sequence
+// functions in sequence
 //####################
 function welcome_constructor() {
   slide = $("<div class='slide' id='welcome_slide' >")
