@@ -1,7 +1,7 @@
 //####################
 // configuration var
 //####################
-var INSTRUCTION_WAIT_TIME = 3; //ms
+var INSTRUCTION_WAIT_TIME = 3000; //ms
 var FEEDBACK_WAIT_TIME = 750; //ms
 var BOARD_SIZE = 4;
 var CELL_SIZE = 70; //px
@@ -607,7 +607,7 @@ TRIAL_CONFIG["explo"] = {hypo: [], pattern: [],
 TRIAL_CONFIG["guide"] = {hypo: [], pattern: [],
   trial_max_clicks: [], guidance: []};
 
-TRIAL_CONFIG["learn"]["max_trials"] = 1; //220;
+TRIAL_CONFIG["learn"]["max_trials"] = 220; //220;
 TRIAL_CONFIG["learn"]["max_clicks"] = 0; //dummy
 TRIAL_CONFIG["learn"]["min_clicks"] = 0; //dummy
 TRIAL_CONFIG["learn"]["memory_limit"] = 30;
@@ -621,7 +621,7 @@ TRIAL_CONFIG["explo"]["memory_limit"] = 30;
 TRIAL_CONFIG["explo"]["score_thresh"] = 0.7;
 set_trial_config("explo");
 
-TRIAL_CONFIG["guide"]["max_trials"] = 1; //110;
+TRIAL_CONFIG["guide"]["max_trials"] = 110; //110;
 TRIAL_CONFIG["guide"]["max_clicks"] = 2;
 TRIAL_CONFIG["guide"]["min_clicks"] = 2;
 TRIAL_CONFIG["guide"]["memory_limit"] = 20;
