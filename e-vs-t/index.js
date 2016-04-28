@@ -726,7 +726,7 @@ function set_trial_config_balanced(type) {
   };
 };
 
-TRIAL_CONFIG["learn"]["max_trials"] = 48*1; //220;
+TRIAL_CONFIG["learn"]["max_trials"] = 48*2; //220;
 TRIAL_CONFIG["learn"]["max_clicks"] = 0; //dummy
 TRIAL_CONFIG["learn"]["min_clicks"] = 0; //dummy
 TRIAL_CONFIG["learn"]["memory_limit"] = 48;
