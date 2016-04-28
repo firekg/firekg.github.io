@@ -761,7 +761,7 @@ TEXT["welcome-teach"] = ["<p>In this experiment, we are interested \
   First, you will play a classification game and learn 4 classes of patterns. \
   Then, you will play a harder version of the game by \
   following the guidance of the best teacher for the game. \
-  The whole experiment will take roughly 5 minutes.</p>",
+  The whole experiment will take roughly 5-10 minutes.</p>",
 ];
 
 TEXT["welcome-learn"] = ["<p>In this experiment, we are interested \
@@ -770,7 +770,7 @@ TEXT["welcome-learn"] = ["<p>In this experiment, we are interested \
   First, you will play a classification game and learn 4 classes of patterns. \
   Then, you will play a harder version of the game in which you get to \
   see only a small fraction of the patterns. \
-  The whole experiment will take roughly 5 minutes.</p>",
+  The whole experiment will take roughly 5-10 minutes.</p>",
 ];
 
 TEXT["formal"] = ["<p>(Note: you won't be able to preview this HIT before \
@@ -815,7 +815,7 @@ TEXT["prior_learn"] = ["<p>Please read the following instructions \
   Upon making a choice, you will receive a feedback on correctness. \
   You will advance to the next part when you complete "
   + TRIAL_CONFIG["learn"]["max_trials"] + " trials. \
-  See if you can get to the highest possible accuracy of 75% by the end! </p>",
+  See if you can get to an accuracy of 75% by the end! </p>",
 
   // Note that you can save some time by being correct as much as possible \
   // because the feedback duration is longer for an incorrect trial.
@@ -836,8 +836,7 @@ TEXT["active_explore"] = ["<p>Please read the following instructions \
   "<p You will advance to the submission phase when you complete "
   + TRIAL_CONFIG["guide"]["max_trials"] + " trials. \
   This part is by design very difficult. \
-  The highest possible accuracy is only 50%, \
-  so see how close you can get to that. </p>",
+  It is considered great to achieve an accuracy of 50%. </p>",
 
   "<p>Please click Next after you have read the instructions.</p>"
 ];
@@ -875,13 +874,13 @@ TEXT["learn_trial"] = ["<p> The Next button will appear once you complete "
   + TRIAL_CONFIG["learn"]["max_trials"] + " trials. \
   Remember that some patterns are <b>shared</b> by multiple concepts, \
   so it's impossible to get 100% accuracy by design. \
-  See if you can reach the highest possible accuracy of 75%! </p>"
+  See if you can reach an accuracy of 75%! </p>"
 ];
 
 TEXT["explo_trial"] = ["<p>The Next button will appear once you compelte "
   + TRIAL_CONFIG["explo"]["max_trials"] + " trials. \
   Remember that this part is by design very difficult. \
-  Aim to reach 50% accuracy by the end of the session! </p>"
+  Aim to reach 50% accuracy by the end of the session. </p>"
 ];
 
 TEXT["guide_trial"] = ["<p>The Next button will appear once you complete "
