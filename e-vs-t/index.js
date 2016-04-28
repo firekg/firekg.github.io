@@ -1,8 +1,12 @@
+var EXP_TYPE = $('body').attr('id');
+// console.log(EXP_TYPE)
+
 //####################
 // configuration var
 //####################
 var INSTRUCTION_WAIT_TIME = 3000; //ms
 var FEEDBACK_WAIT_TIME = 750; //ms
+var FEEDBACK_WAIT_EXTRA = 1500; //ms
 var BOARD_SIZE = 4;
 var CELL_SIZE = 70; //px
 var HYPO_NAME = ['H1', 'H2', 'H3', 'H4'];
@@ -87,6 +91,8 @@ function trial_type_specific_show(gBoard, pattern) {
     });
   } else if (SLIDE_TYPE == "explo") {
     $(document).ready(function() {
+      draw_score_bar();
+      board_key_configure(gBoard);
       board_explore(gBoard, pattern)
     });
   } else if (SLIDE_TYPE == "guide") {
@@ -99,26 +105,32 @@ function trial_type_specific_show(gBoard, pattern) {
 };
 
 function hypo_feedback(click_event) {
-  var choice, truth, frac;
+  var choice, truth, frac, correct;
   $(':button').off("click");
   $(window).off("keypress");
   LOG_END_TIME = new Date().getTime();
   choice = click_event.val();
   truth = TRIAL_CONFIG[SLIDE_TYPE]["hypo"][TRIAL_COUNT];
+  correct = isCorrect(choice, truth);
   // console.log("choice =", choice, "; truth =", truth);
   SCORE_MEMORY.shift();
   update_score(choice, truth);
   if (SLIDE_TYPE == "guide") {
     show_neutral_feedback();
   } else {
-    show_corrective_feedback(choice, truth);
+    show_corrective_feedback(correct, truth);
   };
   log_trial_data(choice);
   TRIAL_COUNT += 1;
   frac = fraction_score(SCORE_MEMORY);
   // console.log(frac);
-  trials_end(frac, TRIAL_COUNT);   //can add to SLIDES
+  trials_end(correct, frac, TRIAL_COUNT);   //can add to SLIDES
 };
+
+function isCorrect(choice, truth) {
+  if(choice == truth) {return true}
+  else {return false};
+}
 
 function reset_score(max) {
   SCORE_MEMORY = [];
@@ -130,13 +142,13 @@ function update_score(choice, truth) {
   else {SCORE_MEMORY.push(0)};
 };
 
-function show_corrective_feedback(choice, truth) {
-  if (choice == truth) {
+function show_corrective_feedback(correct, truth) {
+  if (correct) {
     $("#trial_text").append($("<p align='center' class='feedback-text'>").
       html(`<br>Correct`).css("color", "green"));
   } else {
     $("#trial_text").append($("<p align='center' class='feedback-text'>").
-      html(`<br>Incorrect`).css("color", "red"));
+      html(`<br>Incorrect. Answer is ` + truth +'.').css("color", "red"));
   };
 };
 
@@ -173,7 +185,7 @@ function log_trial_data(choice) {
   EXP.data.push(trial_data);
 }
 
-function trials_end(score, ind) {
+function trials_end(correct, score, ind) {
   var max_score, max_ind, next_button;
   next_button = $("<button>").text("Next").
     one("click", function() {show_next_slide(SLIDES)});
@@ -181,13 +193,21 @@ function trials_end(score, ind) {
   max_ind = TRIAL_CONFIG[SLIDE_TYPE]["max_trials"];
   if (score >= max_score || ind == max_ind) {
     setTimeout(function() {
+      draw_score_bar(); // mainly for the guide phase
       $("#trial_slide").append($("<p>").append(next_button))},
       FEEDBACK_WAIT_TIME);
   } else if (ind < max_ind) {
-    setTimeout(function() {
-      add_slide(SLIDE_TYPE, ind);
-      show_next_slide(SLIDES)
+    if (!correct && SLIDE_TYPE == "learn") {
+      setTimeout(function() {
+        add_slide(SLIDE_TYPE, ind);
+        show_next_slide(SLIDES)
+      }, FEEDBACK_WAIT_EXTRA);
+    } else {
+      setTimeout(function() {
+        add_slide(SLIDE_TYPE, ind);
+        show_next_slide(SLIDES)
       }, FEEDBACK_WAIT_TIME);
+    };
   };
 };
 
@@ -235,7 +255,8 @@ function exp_end() {
     EXP.time.push(time_data);
     // store configs
     config_data = {PATTERN: PATTERN,
-      TRIAL_CONFIG: TRIAL_CONFIG
+      TRIAL_CONFIG: TRIAL_CONFIG,
+      EXP_TYPE: EXP_TYPE
     };
     EXP.config.push(config_data);
     // store text
@@ -502,6 +523,7 @@ function choose_adjacent_quad(ind) {
   var adj_quad, quad_ind, pool;
   adj_quad = [[],[],[],[]];
   //adj_quad[i] gives all lin_inds that are adjacent to quad_i
+  // can refactor these 4 lines!
   adj_quad[0] = adj_quad[0].concat(QUAD[1], QUAD[2]);
   adj_quad[1] = adj_quad[1].concat(QUAD[0], QUAD[3]);
   adj_quad[2] = adj_quad[2].concat(QUAD[0], QUAD[3]);
@@ -607,66 +629,34 @@ TRIAL_CONFIG["explo"] = {hypo: [], pattern: [],
 TRIAL_CONFIG["guide"] = {hypo: [], pattern: [],
   trial_max_clicks: [], guidance: []};
 
-TRIAL_CONFIG["learn"]["max_trials"] = 220; //220;
-TRIAL_CONFIG["learn"]["max_clicks"] = 0; //dummy
-TRIAL_CONFIG["learn"]["min_clicks"] = 0; //dummy
-TRIAL_CONFIG["learn"]["memory_limit"] = 30;
-TRIAL_CONFIG["learn"]["score_thresh"] = 0.7;
-set_trial_config("learn");
-
-TRIAL_CONFIG["explo"]["max_trials"] = 220;
-TRIAL_CONFIG["explo"]["max_clicks"] = 8;
-TRIAL_CONFIG["explo"]["min_clicks"] = 2;
-TRIAL_CONFIG["explo"]["memory_limit"] = 30;
-TRIAL_CONFIG["explo"]["score_thresh"] = 0.7;
-set_trial_config("explo");
-
-TRIAL_CONFIG["guide"]["max_trials"] = 110; //110;
-TRIAL_CONFIG["guide"]["max_clicks"] = 2;
-TRIAL_CONFIG["guide"]["min_clicks"] = 2;
-TRIAL_CONFIG["guide"]["memory_limit"] = 20;
-TRIAL_CONFIG["guide"]["score_thresh"] = 0.85;
-set_trial_config("guide");
-
-function set_trial_config(type) {
-  var ihypo, ipattern, min_cl, max_cl;
-  for (var i=0; i<TRIAL_CONFIG[type]["max_trials"]; i++) {
-    ihypo = discrete_rand(1, 4);
-    ipattern = discrete_rand(0, PATTERN[ihypo-1].length-1);
-    min_c = TRIAL_CONFIG[type]["min_clicks"];
-    max_c = TRIAL_CONFIG[type]["max_clicks"];
-    nclicks = discrete_rand(min_c, max_c);
-    TRIAL_CONFIG[type]["hypo"].push(HYPO_NAME[ihypo-1]);
-    TRIAL_CONFIG[type]["pattern"].push(PATTERN[ihypo-1][ipattern]);
-    TRIAL_CONFIG[type]["trial_max_clicks"].push(nclicks);
-    TRIAL_CONFIG[type]["guidance"].push(optimal_teach(ihypo));
-  };
-};
-
-// console.log(TRIAL_CONFIG["guide"]["hypo"])
-// console.log(TRIAL_CONFIG["guide"]["guidance"])
-
-
 function optimal_teach(hypo) {
   // currently only for exactly two steps
   var guidance = [0,0];
   guidance[0] = discrete_rand(0, 15);
-  if (hypo == 1 || hypo == 2) {
+  if (hypo == 0 || hypo == 1) {
     guidance[1] = choose_adjacent_quad(guidance[0]);
-  } else if (hypo == 3) {
+  } else if (hypo == 2) {
     guidance[1] = choose_diagonal_quad(guidance[0]);
-  } else if (hypo == 4) {
+  } else if (hypo == 3) {
     guidance[1] = choose_diagonal_in_quad(guidance[0]);
   }
   return guidance;
 };
 
-//####################
-// balanced trials (under constrction)
-//####################
-//next: incorporate expected freq
-var HYPO_ID_SEQ = [1,1,2,2,3,3,3,3,3,3,4,4,4,4,4,4,4,4,4,4,4,4];
-var PATTERN_ID_SEQ = [0,1,0,1,0,1,2,3,4,5,0,1,2,3,4,5,6,7,8,9,10,11];
+function balanced_set() {
+  // hardwired for a particular PATTERN
+  var concept_len = [2,2,6,12];
+  var set_len = [12,12,12,12];
+  var concept_id = [];
+  var pattern_id = [];
+  for (var c=0; c<4; c++) {
+    for (var p=0; p<set_len[c]; p++) {
+      concept_id.push(c);
+      pattern_id.push( p % concept_len[c])
+    };
+  };
+  return [concept_id, pattern_id];
+};
 
 function shuffle_together(arr1, arr2) {
   var n1, n2, dummy, shuf1, shuf2;
@@ -676,36 +666,114 @@ function shuffle_together(arr1, arr2) {
   n1 = arr1.length;
   n2 = arr2.length;
   if (n1 != n2) {return []};
-  for (var i=0; i<n1; i++) {dummy.append(i)};
+  for (var i=0; i<n1; i++) {dummy.push(i)};
   dummy = _.shuffle(dummy);
   for (var i=0; i<n1; i++) {
-    shuf1.append(arr1[dummy[i]]);
-    shuf2.append(arr2[dummy[i]]);
+    shuf1.push(arr1[dummy[i]]);
+    shuf2.push(arr2[dummy[i]]);
   };
   return [shuf1, shuf2];
 }
 
-function duplicate_then_shuffle_together(arr1, arr2) {
-  var dup1, dup2;
-  dup1 = arr1.concat(arr1);
-  dup2 = arr2.concat(arr2);
-  return shuffle_together(dup1, dup2);
-}
+function n_shuffled_balanced_set(n) {
+  var zip_arr, c_id_arr, p_id_arr;
+  var concept_id_arr, pattern_id_arr;
+  concept_id_arr = [];
+  pattern_id_arr = [];
+  for (var i=0; i<n; i++) {
+    zip_arr = balanced_set();
+    c_id_arr = zip_arr[0];
+    p_id_arr = zip_arr[1];
+    zip_arr = shuffle_together(c_id_arr, p_id_arr);
+    concept_id_arr = concept_id_arr.concat(zip_arr[0]);
+    pattern_id_arr = pattern_id_arr.concat(zip_arr[1]);
+  };
+  return [concept_id_arr, pattern_id_arr];
+};
+
+function set_trial_config_random(type) {
+  var ihypo, ipattern, min_cl, max_cl;
+  for (var i=0; i<TRIAL_CONFIG[type]["max_trials"]; i++) {
+    ihypo = discrete_rand(0, 3);
+    ipattern = discrete_rand(0, PATTERN[ihypo].length-1);
+    min_c = TRIAL_CONFIG[type]["min_clicks"];
+    max_c = TRIAL_CONFIG[type]["max_clicks"];
+    nclicks = discrete_rand(min_c, max_c);
+    TRIAL_CONFIG[type]["hypo"].push(HYPO_NAME[ihypo]);
+    TRIAL_CONFIG[type]["pattern"].push(PATTERN[ihypo][ipattern]);
+    TRIAL_CONFIG[type]["trial_max_clicks"].push(nclicks);
+    TRIAL_CONFIG[type]["guidance"].push(optimal_teach(ihypo));
+  };
+};
+
+function set_trial_config_balanced(type) {
+  var n_set, ihypo, ipattern, min_cl, max_cl;
+  var zip_arr, hypo_id_arr, patt_id_arr;
+  n_set = TRIAL_CONFIG[type]["max_trials"]/48; //hard-wired
+  zip_arr = n_shuffled_balanced_set(n_set);
+  hypo_id_arr = zip_arr[0];
+  patt_id_arr = zip_arr[1];
+  for (var i=0; i<TRIAL_CONFIG[type]["max_trials"]; i++) {
+    ihypo = hypo_id_arr[i];
+    ipattern = patt_id_arr[i];
+    min_c = TRIAL_CONFIG[type]["min_clicks"];
+    max_c = TRIAL_CONFIG[type]["max_clicks"];
+    nclicks = discrete_rand(min_c, max_c);
+    TRIAL_CONFIG[type]["hypo"].push(HYPO_NAME[ihypo]);
+    TRIAL_CONFIG[type]["pattern"].push(PATTERN[ihypo][ipattern]);
+    TRIAL_CONFIG[type]["trial_max_clicks"].push(nclicks);
+    TRIAL_CONFIG[type]["guidance"].push(optimal_teach(ihypo));
+  };
+};
+
+TRIAL_CONFIG["learn"]["max_trials"] = 48*1; //220;
+TRIAL_CONFIG["learn"]["max_clicks"] = 0; //dummy
+TRIAL_CONFIG["learn"]["min_clicks"] = 0; //dummy
+TRIAL_CONFIG["learn"]["memory_limit"] = 48;
+TRIAL_CONFIG["learn"]["score_thresh"] = 1; //0.7;
+set_trial_config_balanced("learn");
+
+TRIAL_CONFIG["explo"]["max_trials"] = 48;
+TRIAL_CONFIG["explo"]["max_clicks"] = 2;
+TRIAL_CONFIG["explo"]["min_clicks"] = 2;
+TRIAL_CONFIG["explo"]["memory_limit"] = 48;
+TRIAL_CONFIG["explo"]["score_thresh"] = 1;
+set_trial_config_balanced("explo");
+
+TRIAL_CONFIG["guide"]["max_trials"] = 48; //110;
+TRIAL_CONFIG["guide"]["max_clicks"] = 2;
+TRIAL_CONFIG["guide"]["min_clicks"] = 2;
+TRIAL_CONFIG["guide"]["memory_limit"] = 48;
+TRIAL_CONFIG["guide"]["score_thresh"] = 1; //0.85;
+set_trial_config_balanced("guide");
+
+// console.log(TRIAL_CONFIG["guide"]["hypo"])
+// console.log(TRIAL_CONFIG["guide"]["guidance"])
 
 //####################
 // text
 //####################
 var TEXT = {};
 
-TEXT["welcome"] = ["<p>In this experiment, we are interested \
+TEXT["welcome-teach"] = ["<p>In this experiment, we are interested \
   in how much guided exploration can help people learn abstract concepts. \
   The experiment has two parts. \
   First, you will play a classification game and learn 4 classes of patterns. \
   Then, you will play a harder version of the game by \
-  following the guidance of the best teacher for the task. \
-  The whole experiment will take roughly 5-10 minutes.</p>",
+  following the guidance of the best teacher for the game. \
+  The whole experiment will take roughly 5 minutes.</p>",
+];
 
-  "<p>(Note: you won't be able to preview this HIT before \
+TEXT["welcome-learn"] = ["<p>In this experiment, we are interested \
+  in how much self exploration helps people learn abstract concepts. \
+  The experiment has two parts. \
+  First, you will play a classification game and learn 4 classes of patterns. \
+  Then, you will play a harder version of the game in which you get to \
+  see only a small fraction of the patterns. \
+  The whole experiment will take roughly 5 minutes.</p>",
+];
+
+TEXT["formal"] = ["<p>(Note: you won't be able to preview this HIT before \
   accepting it.)</p>",
 
   "<p>By answering the following questions, you \
@@ -737,7 +805,7 @@ TEXT["prior_learn"] = ["<p>Please read the following instructions \
   you will see patterns composed of black and white squares on a 4-by-4 grid. \
   There are four &#34concepts,&#34 named H1, H2, H3, and H4. \
   Each concept consists of multiple patterns, \
-  and some patterns are shared by more than one concepts.</p>",
+  and some patterns are <b>shared</b> by multiple concepts.</p>",
 
   "<p>The goal here is to learn which patterns are associated \
   with which concepts and at what frequency. \
@@ -745,12 +813,31 @@ TEXT["prior_learn"] = ["<p>Please read the following instructions \
   on a button (labelled H1, H2, H3, or H4), or by using the keyboard \
   (pressing 1, 2, 3, or 4). \
   Upon making a choice, you will receive a feedback on correctness. \
-  You will advance to the next part when \
-  you can distinguish the concepts with "
-   + Math.floor(TRIAL_CONFIG["learn"]["score_thresh"]*100) +
-  "% accuracy or when you use up all "
-  + TRIAL_CONFIG["learn"]["max_trials"] + " of the available trials. \
-  Try to finish this part in as few trials as possible. </p>",
+  You will advance to the next part when you complete "
+  + TRIAL_CONFIG["learn"]["max_trials"] + " trials. \
+  See if you can get to the highest possible accuracy of 75% by the end! </p>",
+
+  // Note that you can save some time by being correct as much as possible \
+  // because the feedback duration is longer for an incorrect trial.
+
+  "<p>Please click Next after you have read the instructions.</p>"
+];
+
+TEXT["active_explore"] = ["<p>Please read the following instructions \
+  carefully.</p>",
+
+  "<p>In this second part, the game will be much harder. \
+  The pattern will now be covered by gray squares, \
+  and you get to &#34open&#34 only <b>two</b> squares before making a guess \
+  at which concept is associated with the hidden pattern. \
+  You can open a square by clicking on it or by using the \
+  keyboard (pressing the key labelled on the square). </p>",
+
+  "<p You will advance to the submission phase when you complete "
+  + TRIAL_CONFIG["guide"]["max_trials"] + " trials. \
+  This part is by design very difficult. \
+  The highest possible accuracy is only 50%, \
+  so see how close you can get to that. </p>",
 
   "<p>Please click Next after you have read the instructions.</p>"
 ];
@@ -762,39 +849,46 @@ TEXT["optimal_teach"] = ["<p>Please read the following instructions \
   The pattern will now be covered by gray squares, \
   and you will reveal the hidden pattern one square at a time. \
   A teacher who knows the <b>correct answer</b> has figured out the \
-  <b>best way</b> to help you get to the correct choice of concept. \
+  <b>best way to help you</b> get to the correct choice of concept. \
   It turns out that only two openings are needed to do this. \
   The teacher will thus highlight in sequence which two gray squares to open, \
   and you can open a highlighted square by clicking on it or by using the \
   keyboard (pressing the key labelled on the square).</p>",
 
+// Another version:
+// As strange as it seems, it is actually possible to get to the correct answer
+// every time given these information.
+
   "<p>Unlike the first part, no feedback on correctness will be given, \
   although score will be kept behind the scene. \
-  You will advance to the submission phase when you reach "
-   + Math.floor(TRIAL_CONFIG["guide"]["score_thresh"]*100) +
-  "% accuracy or when you use up all "
-  + TRIAL_CONFIG["guide"]["max_trials"] + " of the available trials. \
-  Again, try to finish in as few trials as possible. </p>",
+  You will advance to the submission phase when you complete "
+  + TRIAL_CONFIG["guide"]["max_trials"] + " trials, \
+  and we will show you your score at the end. \
+  In this part, it is actually possible to get to 100% \
+  accuracy with the teacher's guidance. \
+  See how close to perfect you can get! </p>",
 
   "<p>Please click Next after you have read the instructions.</p>"
 ];
 
-TEXT["learn_trial"] = ["<p>The Next button will appear once you reach "
-  + 100*TRIAL_CONFIG["learn"]["score_thresh"] + "% in accuracy \
-  or once you used up all "
-  + TRIAL_CONFIG["learn"]["max_trials"] + " trials.</p>"
+TEXT["learn_trial"] = ["<p> The Next button will appear once you complete "
+  + TRIAL_CONFIG["learn"]["max_trials"] + " trials. \
+  Remember that some patterns are <b>shared</b> by multiple concepts, \
+  so it's impossible to get 100% accuracy by design. \
+  See if you can reach the highest possible accuracy of 75%! </p>"
 ];
 
-TEXT["explo_trial"] = ["<p>The Next button will appear once you reach "
-  + 100*TRIAL_CONFIG["explo"]["score_thresh"] + "% in accuracy \
-  or once you used up all "
-  + TRIAL_CONFIG["explo"]["max_trials"] + " trials.</p>"
+TEXT["explo_trial"] = ["<p>The Next button will appear once you compelte "
+  + TRIAL_CONFIG["explo"]["max_trials"] + " trials. \
+  Remember that this part is by design very difficult. \
+  Aim to reach 50% accuracy by the end of the session! </p>"
 ];
 
-TEXT["guide_trial"] = ["<p>The Next button will appear once you reach "
-  + 100*TRIAL_CONFIG["guide"]["score_thresh"] + "% in accuracy \
-  or once you used up all "
-  + TRIAL_CONFIG["guide"]["max_trials"] + " trials.</p>"
+TEXT["guide_trial"] = ["<p>The Next button will appear once you complete "
+  + TRIAL_CONFIG["guide"]["max_trials"] + " trials. \
+  Remember that the teacher knows the <b>correct answer</b> \
+  and is <b>purposefully</b> choosing the squares so that you can \
+  get to the correct answer as well.</p>"
 ];
 
 TEXT["survey"] = ["<p>Thank you for taking our HIT. \
@@ -827,22 +921,42 @@ TEXT["survey"] = ["<p>Thank you for taking our HIT. \
 //####################
 var SLIDES = [];
 
-SLIDES.unshift({ name: "welcome", type: "instruction",
-  text: TEXT["welcome"],
-  constructor: instruction_constructor});
+if (EXP_TYPE == "learn-teach") {
+  SLIDES.unshift({ name: "welcome", type: "instruction",
+    text: TEXT["welcome-teach"].concat(TEXT["formal"]),
+    constructor: instruction_constructor});
+};
+if (EXP_TYPE == "learn-explore") {
+  SLIDES.unshift({ name: "welcome", type: "instruction",
+    text: TEXT["welcome-learn"].concat(TEXT["formal"]),
+    constructor: instruction_constructor});
+};
+
 SLIDES.unshift({ name: "prior_learn", type: "instruction",
   text: TEXT["prior_learn"],
   constructor: instruction_constructor});
 SLIDES.unshift({name: "learn", type: "learn", text: TEXT["learn_trial"],
   pattern: TRIAL_CONFIG["learn"]["pattern"][0],
   constructor: trial_constructor});
-SLIDES.unshift({ name: "optimal_teach", type: "instruction",
-  text: TEXT["optimal_teach"],
-  constructor: instruction_constructor});
-SLIDES.unshift({name: "guide", type: "guide", text: TEXT["guide_trial"],
-  pattern: TRIAL_CONFIG["guide"]["pattern"][0],
-  guidance: TRIAL_CONFIG["guide"]["guidance"][0],
-  constructor: trial_constructor});
+
+if (EXP_TYPE == "learn-teach") {
+  SLIDES.unshift({ name: "optimal_teach", type: "instruction",
+    text: TEXT["optimal_teach"],
+    constructor: instruction_constructor});
+  SLIDES.unshift({name: "guide", type: "guide", text: TEXT["guide_trial"],
+    pattern: TRIAL_CONFIG["guide"]["pattern"][0],
+    guidance: TRIAL_CONFIG["guide"]["guidance"][0],
+    constructor: trial_constructor});
+};
+if (EXP_TYPE == "learn-explore") {
+  SLIDES.unshift({ name: "active_explore", type: "instruction",
+    text: TEXT["active_explore"],
+    constructor: instruction_constructor});
+  SLIDES.unshift({name: "explo", type: "explo", text: TEXT["explo_trial"],
+    pattern: TRIAL_CONFIG["explo"]["pattern"][0],
+    constructor: trial_constructor});
+};
+
 SLIDES.unshift({ name: "survey", type: "instruction",
   text: TEXT["survey"],
   constructor: survey_constructor});
@@ -855,7 +969,7 @@ function add_slide(slide_type, ind) {
       pattern: TRIAL_CONFIG["learn"]["pattern"][ind],
       constructor: trial_constructor});
   };
-  if (slide_type == "explore") {
+  if (slide_type == "explo") {
     SLIDES.push({name: "explo", type: "explo", text: TEXT["explo_trial"],
       pattern: TRIAL_CONFIG["explo"]["pattern"][ind],
       constructor: trial_constructor});
