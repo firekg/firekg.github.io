@@ -111,12 +111,15 @@ function show_teacher_image() {
   var mr, title;
   mr = $('<img id="mr" src="css/images/ElementryTeacherIcon.png" />');
   mr.css({height: '100px', wdith: '100px'});
-  mr.css({position: 'absolute', top: '100px', left: '500px'});
+  mr.css({position: 'relative', top: '-250px', left: '210px'});
+  mr.css({marginTop: '-100px'});
   title = $("<div id='title'>");
-  title.css({position: 'absolute', top: '200px', left: '500px',
-    width: '100px', textAlign: 'center'});
-  title.append("<p>").html("Mr. Teacher")
-  $("body").append(mr, title);
+  title.css({position: 'relative', top: '-250px', left: '210px'});
+  title.css({height: '0px', width: '100px', textAlign: 'center'});
+  title.css({marginBottom: '-20px'});
+  title.append("<p>").html("Mr. Teacher");
+  $("#row_board").append(mr, title);
+  //$("body").append(mr, title);
   // title.css("border","red solid 1px");
   // title.show(); // note: .show() doesn't work with image
 };
