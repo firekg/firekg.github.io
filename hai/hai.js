@@ -32,7 +32,7 @@ var EXP = {data: [], modelParams: [], startTimes: {}, endTimes: {},
 //####################
 var STI_AREA_W = 300; //PX
 var STI_AREA_H = 300; //px
-var STI_RADIUS_BASE = Math.random()*10; //px
+var STI_RADIUS_BASE = Math.random()*10 + 10; //px
 var STI_ANGLE_BASE = Math.random()*30; //deg
 
 var SCORE_THRESH = 0.95; //0.95;
