@@ -353,12 +353,12 @@ var SetStimulus = ( function( window, undefined ) {
 
   function SetStimulus(STI_AREA_W, STI_RADIUS_BASE, STI_ANGLE_BASE) {
 
-    this.STI_MARGIN = 50; //px
     this.STI_SHIFT = 40; //px or deg
-    this.STI_RADIUS_MIN = STI_RADIUS_BASE + this.STI_MARGIN; //px
-    this.STI_RADIUS_MAX = STI_AREA_W/2 - this.STI_MARGIN; //px
-    this.STI_ANGLE_MIN = STI_ANGLE_BASE; //deg
-    this.STI_ANGLE_MAX = this.STI_ANGLE_MIN + 150; //deg
+    this.STI_MARGIN = this.STI_SHIFT + 10; //px
+    this.STI_RADIUS_MIN = STI_RADIUS_BASE; //10-30 px
+    this.STI_RADIUS_MAX = this.STI_RADIUS_MIN + 110; //max 140 px
+    this.STI_ANGLE_MIN = STI_ANGLE_BASE; //10-30 deg
+    this.STI_ANGLE_MAX = this.STI_ANGLE_MIN + 120; //max 150 deg
 
     this.randCond = function randCond() {
     // 2 sampling cond x 2 category cond = 4 conditions:
@@ -397,7 +397,7 @@ var SetStimulus = ( function( window, undefined ) {
       for (var i=0; i<max_trials; i++) {
         c = this.randClass();
         if (cond[0] == "SR" && cond[1] == "Beat") {
-          s = sampSti.smallVar(min_r, max_r);
+          s = sampSti.smallVar(min_r + this.STI_MARGIN, max_r - this.STI_MARGIN);
           a = sampSti.bigVar(min_a, max_a);
           if ( c == "Beat" ) {
             r = s - this.STI_SHIFT;
@@ -405,7 +405,7 @@ var SetStimulus = ( function( window, undefined ) {
             r = s + this.STI_SHIFT;
           }
         } else if (cond[0] == "SR" && cond[1] == "Sonic") {
-          s = sampSti.smallVar(min_r, max_r);
+          s = sampSti.smallVar(min_r + this.STI_MARGIN, max_r - this.STI_MARGIN);
           a = sampSti.bigVar(min_a, max_a);
           if ( c == "Beat" ) {
             r = s + this.STI_SHIFT;
@@ -414,7 +414,7 @@ var SetStimulus = ( function( window, undefined ) {
           }
         } else if (cond[0] == "SA" && cond[1] == "Beat") {
           s = sampSti.smallVar(min_a, max_a);
-          r = sampSti.bigVar(min_r - this.STI_MARGIN, max_r + this.STI_MARGIN);
+          r = sampSti.bigVar(min_r, max_r);
           if ( c == "Beat" ) {
             a = s - this.STI_SHIFT;
           } else if ( c == "Sonic") {
@@ -422,7 +422,7 @@ var SetStimulus = ( function( window, undefined ) {
           }
         } else if (cond[0] == "SA" && cond[1] == "Sonic") {
           s = sampSti.smallVar(min_a, max_a);
-          r = sampSti.bigVar(min_r - this.STI_MARGIN, max_r + this.STI_MARGIN);
+          r = sampSti.bigVar(min_r, max_r);
           if ( c == "Beat" ) {
             a = s + this.STI_SHIFT;
           } else if ( c == "Sonic") {
@@ -470,10 +470,10 @@ var SetStimulus = ( function( window, undefined ) {
 
     this.setCheckTrials = function setCheckTrials(max_trials, cond) {
       var arr = {radius: [], angle: [], truth: []};
-      var radiusMin = this.STI_MARGIN - this.STI_SHIFT;
-      var radiusMax = STI_AREA_W/2 - this.STI_MARGIN + this.STI_SHIFT;
-      var angleMin = 15;
-      var angleMax = 180 - 15;
+      var radiusMin = 10;
+      var radiusMax = STI_AREA_W/2 - 10;
+      var angleMin = 10;
+      var angleMax = 180 - 10;
       var n = 16;
       var nSplit = 2;
       var nSub = n/nSplit;
@@ -516,16 +516,16 @@ var SetStimulus = ( function( window, undefined ) {
     };
 
     this.setGridCandidates = function setGridCandidates() {
-      var radiusMin = this.STI_MARGIN - this.STI_SHIFT;
-      var radiusMax = STI_AREA_W/2 - this.STI_MARGIN + this.STI_SHIFT;
-      var angleMin = 15;
-      var angleMax = 180 - 15;
-      var n = 16;
+      var radiusMin = 10;
+      var radiusMax = STI_AREA_W/2 - 10;
+      var angleMin = 10;
+      var angleMax = 180 - 10;
+      var n = 20;
       var radiusArr = discretize(radiusMin, radiusMax, n);
       var angleArr = discretize(angleMin, angleMax, n);
       var candidates = broadcast(radiusArr, angleArr);
-      var radiusNoise = (radiusMax - radiusMin)/(n - 1);
-      var angleNoise = (angleMax - angleMin)/(n - 1);
+      var radiusNoise = 0; //(radiusMax - radiusMin)/(n - 1);
+      var angleNoise = 0; //(angleMax - angleMin)/(n - 1);
       return this.addUnifNoise(candidates, radiusNoise, angleNoise);
     };
 
