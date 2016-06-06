@@ -1,8 +1,21 @@
+var STI_AREA_W = 300; //PX
+var STI_RADIUS_BASE = Math.random()*20 + 10; //px
+var STI_ANGLE_BASE = Math.random()*20 + 10; //deg
+
 var myMath = new MyMath;
 var myLogit = new MyLogit;
-var setSti = new SetStimulus(300, 5, 15);
+var setSti = new SetStimulus(STI_AREA_W, STI_RADIUS_BASE, STI_ANGLE_BASE);
 
-var FIG_W = 250;
+console.log("Radius min:", setSti.STI_RADIUS_MIN);
+console.log("Radius max:", setSti.STI_RADIUS_MAX);
+console.log("Radius boundary:", (setSti.STI_RADIUS_MIN + setSti.STI_RADIUS_MAX)/2);
+console.log("Radius array:", discretize(10,140,20));
+console.log("Angle min:", setSti.STI_ANGLE_MIN);
+console.log("Angle max:", setSti.STI_ANGLE_MAX);
+console.log("Angle boundary:", (setSti.STI_ANGLE_MIN + setSti.STI_ANGLE_MAX)/2);
+console.log("Angle array:", discretize(10,170,20));
+
+var FIG_W = 180;
 var GRID_SIZE = 5;
 var GRID_N = FIG_W/GRID_SIZE;
 var COND = setSti.randCond();
@@ -22,9 +35,9 @@ var grid = gridCoord(GRID_N, FIG_W);
 // console.log(myMath.flattenNestedArr(grid));
 
 var whichData = "sampled";
-var whichGridPrediction = "none";
-var interactionFlag = true;
-var candidatesFixFlag = true;
+var whichGridPrediction = "Optimal";
+var interactionFlag = false;
+var candidatesFixFlag = false;
 
 if (whichData == "fixed") {
 var X_TRAIN = [[125.5543400533685, 114.52346107930032],
@@ -44,7 +57,7 @@ var Y_TRAIN = [1, 1, 1, 0, 0, 0, 0, 1, 1, 0];
 };
 
 if (whichData = "sampled") {
-  var nSamp = 1;
+  var nSamp = 150;
   var stiArr = setSti.setTrials(nSamp, COND);
   var data = setSti.reformatForMyLogit(stiArr, PREFERENCE);
   var X_TRAIN = data[0];
@@ -116,6 +129,7 @@ if (whichGridPrediction == "MyLogit") {
 };
 
 if (whichGridPrediction == "Optimal") {
+  var candidates = setSti.setGridCandidates();
   var optimalLabel;
   var optimalPredictions = [];
   for (var i=0; i<candidates.length; i++) {
@@ -134,7 +148,9 @@ $(document).ready(function(){
   paintSoftmax(grid, GRID_SIZE, finalCoefs);
   drawData(X_TRAIN, Y_TRAIN, 1);
   // drawData(candidates, predictions, 1);
-  // drawData(candidates, optimalPredictions, 1);
+  if (whichGridPrediction == "Optimal") {
+    drawData(candidates, optimalPredictions, 1);
+  };
 });
 $(".slide").hide();
 slide.show();
@@ -215,7 +231,17 @@ function drawData(x2d, y1d, scale) {
       ctx.fillStyle = 'blue';
     };
     ctx.fill();
-    ctx.font = "15px Arial";
-    ctx.fillText(i.toString(), x1, x2);
+    // ctx.font = "15px Arial";
+    // ctx.fillText(i.toString(), x1, x2);
   };
+};
+
+function discretize(min, max, n) {
+  var arr, dx;
+  arr = [];
+  dx = (max-min)/(n-1);
+  for (var i=0; i<n; i++) {
+    arr.push(min + i*dx);
+  }
+  return arr;
 };
