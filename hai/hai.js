@@ -23,6 +23,7 @@
 //####################
 // experimental data
 //####################
+var EXP_VER = "2.1";
 var EXP_TYPE = $('body').attr('id');
 var EXP = {data: [], modelParams: [], startTimes: {}, endTimes: {},
            survey: [], config: [], instruction: []};
@@ -32,8 +33,8 @@ var EXP = {data: [], modelParams: [], startTimes: {}, endTimes: {},
 //####################
 var STI_AREA_W = 300; //PX
 var STI_AREA_H = 300; //px
-var STI_RADIUS_BASE = Math.random()*10 + 10; //px
-var STI_ANGLE_BASE = Math.random()*30; //deg
+var STI_RADIUS_BASE = Math.random()*20 + 10; //px
+var STI_ANGLE_BASE = Math.random()*20 + 10; //deg
 
 var SCORE_THRESH = 0.95; //0.95;
 var SCORE_MEMORY_MAX = 20;
@@ -52,7 +53,6 @@ var PREFERENCE = setSti.randClass();
 // console.log(PREFERENCE);
 
 
-
 //####################
 // dynamic global variables initialization
 //####################
@@ -69,7 +69,10 @@ var LOG_END_TIME = new Date().getTime();
 var SCORE_MEMORY = [];
 for (i=0; i<SCORE_MEMORY_MAX; i++) {
   SCORE_MEMORY.push(0);
-}
+};
+
+var INTER_CHOICES = [];
+
 
 //####################
 // random inputs
@@ -86,6 +89,7 @@ var INPUT_CHECK = setSti.setCheckTrials(MAX_CHECK_TRIALS, SAMP_CAT_COND);
 
 var N_CANDIDATES = 400;
 var CANDIDATES = setSti.setTrials(N_CANDIDATES, SAMP_CAT_COND);
+// var CANDIDATES = setSti.setGridCandidates(); //doesn't work now
 // console.log(INPUT_INTER);
 
 
@@ -244,7 +248,8 @@ function logConfigData() {
     FEEDBACK_WAIT_TIME: FEEDBACK_WAIT_TIME,
     SAMP_CAT_COND: SAMP_CAT_COND,
     PREFERENCE: PREFERENCE,
-    EXP_TYPE: EXP_TYPE
+    EXP_TYPE: EXP_TYPE,
+    EXP_VERSION: EXP_VER
   };
   EXP.config.push(configData);
 };
@@ -253,7 +258,7 @@ function logConfigData() {
 //####################
 // utility functions
 //####################
-function formatCANDIDATES() {
+function formatCandidates() {
   var candidates = [];
   var n = CANDIDATES.radius.length;
   for(var i=0; i<n; i++) {
@@ -262,6 +267,18 @@ function formatCANDIDATES() {
   return candidates;
 };
 
+function formatInterChoices(choices) {
+  var n = choices.length;
+  var yLabel = [];
+  for (var i=0; i<n; i++) {
+    if (choices[i] == "Like") {
+      yLabel.push(1);
+    } else if (choices[i] == "Dislike") {
+        yLabel.push(0);
+    };
+  };
+  return yLabel;
+};
 
 //####################
 // trial functions
@@ -439,13 +456,14 @@ function theAlgorithm() {
       finalCoefs, candidates, xChosen_indVal, optLabel, indChosen;
   data = setSti.reformatForMyLogit(INPUT_INTER, PREFERENCE);
   xTrain = data[0];
-  yTrain = data[1];
+  yTrain = formatInterChoices(INTER_CHOICES); //data[1];
+  // console.log(yTrain);
   meanVec = myMath.meanMatCol(xTrain);
   stdVec = myMath.stdMatCol(xTrain);
   standardX = myMath.standardizeMatCol(xTrain);
   finalCoefs = myLogit.train(INIT_COEFS, standardX, yTrain, 1, 100);
   finalCoefs = myLogit.unstandardizeCoefs(finalCoefs, meanVec, stdVec);
-  candidates = formatCANDIDATES();
+  candidates = formatCandidates();
   EXP.modelParams.push(finalCoefs);
   if (EXP_TYPE == "hai-random") {
     xChosen_indVal = [[CANDIDATES.radius[INTER_TRIAL-1],
@@ -478,6 +496,8 @@ function inter_feedback(click_event) {
   $(window).off("keypress");
   LOG_END_TIME = new Date().getTime();
   var choice = click_event.val();
+  INTER_CHOICES.push(choice);
+  // console.log(INTER_CHOICES);
   $("#inter_slide").append($("<p class='feedback-text'>").
     html('Choice received').css("color", "gray"))
   logTrialData(SLIDE_NAME, INTER_TRIAL, INPUT_INTER,
@@ -693,7 +713,7 @@ TEXT["training_instruction"] = ["<p>Please read the following instructions \
   After an antenna is displayed, you can respond by clicking \
   on a button (Beat / Sonic), or by using the keyboard \
   (&#34z&#34 for Beat / &#34m&#34 for Sonic). \
-  Upon responding, you will receive a feedback on correctnesampSti. \
+  Upon responding, you will receive a feedback on correctness. \
   You will advance to the next part once you can distinguish the \
   antennas with 95% accuracy.</p>",
 
