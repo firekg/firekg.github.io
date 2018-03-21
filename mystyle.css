@@ -27,7 +27,7 @@ color:rgba(1,1,1,0.75);
 .faint {
   background-image:
     linear-gradient(rgba(255, 255, 255, 0.7), rgba(255, 255, 255, 0.7)),
-    url("image/background/romans8-2.jpg");
+    url("image/background/romans8-2.JPG");
 }
 
 #headertd{
